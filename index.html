@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500&display=swap" rel="stylesheet">
+<style>
+  /* ── reset & base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green:       #1D9E75;
+    --green-light: #E1F5EE;
+    --green-mid:   #5DCAA5;
+    --amber:       #BA7517;
+    --amber-light: #FFF8E1;
+    --text-primary:   #0f0f0f;
+    --text-secondary: #5a5a5a;
+    --text-muted:     #999;
+    --border:      #e8e8e8;
+    --bg:          #fafafa;
+    --card-bg:     #ffffff;
+    --region-europe:  #378ADD;
+    --region-asia:    #D85A30;
+    --region-americas:#1D9E75;
+    --region-africa:  #BA7517;
+    --region-oceania: #D4537E;
+  }
+  html { font-size: 16px; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  a { color: var(--green); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { font-weight: 600; }
+
+  /* ── layout ── */
+  .site-header {
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .site-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+  .header-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── alert banner ── */
+  #deal-banner {
+    background: var(--green-light);
+    border: 1px solid var(--green-mid);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 32px;
+    display: none;
+  }
+  .banner-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+  .banner-deals { display: flex; flex-direction: column; gap: 8px; }
+  .banner-deal {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 14px;
+  }
+  .banner-dest { font-weight: 600; color: var(--text-primary); }
+  .banner-price { color: var(--green); font-weight: 600; }
+  .banner-event { color: var(--text-secondary); }
+  .banner-link { margin-left: auto; font-size: 13px; color: var(--green); white-space: nowrap; }
+
+  /* ── controls ── */
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+  .filter-btn {
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .filter-btn:hover { border-color: #bbb; color: var(--text-primary); }
+  .filter-btn.active {
+    background: var(--text-primary);
+    color: #fff;
+    border-color: var(--text-primary);
+  }
+  .search-wrap {
+    margin-left: auto;
+    position: relative;
+  }
+  .search-wrap svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  #search {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 7px 14px 7px 32px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text-primary);
+    width: 200px;
+    outline: none;
+    transition: border-color 0.12s;
+  }
+  #search:focus { border-color: #aaa; }
+
+  /* ── legend ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 28px;
+    font-size: 12px;
+    color: var(--text-muted);
+    align-items: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .legend-sep { color: var(--border); }
+
+  /* ── month sections ── */
+  .month-section { margin-bottom: 48px; }
+  .month-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .week-group { margin-bottom: 24px; }
+  .week-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .dest-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
+  }
+
+  /* ── destination cards ── */
+  .dest-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: border-color 0.12s, box-shadow 0.12s;
+    position: relative;
+  }
+  .dest-card:hover { border-color: #ccc; }
+  .dest-card.has-deal {
+    border-color: var(--green-mid);
+    background: linear-gradient(135deg, #fff 0%, #f6fdf9 100%);
+  }
+  .dest-card.has-deal::before {
+    content: '✈';
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 13px;
+    color: var(--green);
+  }
+  .region-pip {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+  .card-body { flex: 1; min-width: 0; }
+  .card-top {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .card-dest {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .card-event-name {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .card-hook {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .badge.deal-badge {
+    background: var(--green-light);
+    color: #0F6E56;
+    border-color: var(--green-mid);
+    font-weight: 600;
+  }
+  .badge.warn-badge {
+    background: var(--amber-light);
+    color: var(--amber);
+    border-color: #FFD54F;
+  }
+  .deal-link {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--green);
+    white-space: nowrap;
+  }
+
+  /* ── states ── */
+  .loading-state, .empty-state {
+    text-align: center;
+    padding: 80px 0;
+    color: var(--text-muted);
+    font-size: 15px;
+  }
+  .loading-state .spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── responsive ── */
+  @media (max-width: 600px) {
+    .header-inner { padding: 0 16px; }
+    .main { padding: 24px 16px 60px; }
+    .dest-grid { grid-template-columns: 1fr; }
+    #search { width: 150px; }
+    .controls { gap: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <span class="site-title">Travel Calendar</span>
+    <span class="header-meta" id="last-updated">Loading...</span>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- deal alert banner (shown when recent matches exist) -->
+  <div id="deal-banner">
+    <div class="banner-label">Flight deals matched to your calendar</div>
+    <div class="banner-deals" id="banner-deals"></div>
+  </div>
+
+  <!-- filters -->
+  <div class="controls">
+    <button class="filter-btn active" data-region="all">All</button>
+    <button class="filter-btn" data-region="europe">Europe</button>
+    <button class="filter-btn" data-region="asia">Asia</button>
+    <button class="filter-btn" data-region="americas">Americas</button>
+    <button class="filter-btn" data-region="africa">Africa & Middle East</button>
+    <button class="filter-btn" data-region="oceania">Oceania</button>
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search" placeholder="Search events, cities..." autocomplete="off">
+    </div>
+  </div>
+
+  <!-- legend -->
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:var(--region-europe)"></span>Europe</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--region-asia)"></span>Asia</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--region-americas)"></span>Americas</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--region-africa)"></span>Africa & ME</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--region-oceania)"></span>Oceania</span>
+    <span class="legend-sep">·</span>
+    <span class="legend-item">
+      <span style="background:var(--green-light);color:#0F6E56;border:1px solid var(--green-mid);font-size:10px;padding:1px 7px;border-radius:8px;">✈ deal</span>
+      = active Going.com deal
+    </span>
+  </div>
+
+  <!-- calendar output -->
+  <div id="calendar">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      Loading calendar...
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── CONFIG ── replace with your actual IDs ───────────────────
+const SHEET_ID       = '1t-lDfHKAXXOclTGVLn4nV0Nz3Cm6Py9VO6wS-4Uf_As';
+const CALENDAR_TAB   = 'Calendar';
+const DEALS_TAB      = 'Deals';
+const META_TAB       = 'Meta';
+const DEAL_DAYS_BACK = 7; // show deals from last N days in banner + cards
+
+// ── Google Sheets JSON endpoint ──────────────────────────────
+function sheetUrl(tab) {
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tab)}`;
+}
+
+async function fetchSheet(tab) {
+  const res  = await fetch(sheetUrl(tab));
+  const text = await res.text();
+  // Google wraps the JSON in a callback — strip it
+  const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
+  const cols  = json.table.cols.map(c => c.label);
+  const rows  = json.table.rows.map(row =>
+    Object.fromEntries(cols.map((col, i) => [col, row.c[i]?.v ?? '']))
+  );
+  return rows;
+}
+
+// ── state ────────────────────────────────────────────────────
+let calendarData = [];
+let dealsData    = [];
+let activeRegion = 'all';
+let activeSearch = '';
+
+const REGION_COLORS = {
+  europe:   'var(--region-europe)',
+  asia:     'var(--region-asia)',
+  americas: 'var(--region-americas)',
+  africa:   'var(--region-africa)',
+  oceania:  'var(--region-oceania)',
+};
+
+// ── load data ────────────────────────────────────────────────
+async function init() {
+  try {
+    const [calRows, dealRows, metaRows] = await Promise.all([
+      fetchSheet(CALENDAR_TAB),
+      fetchSheet(DEALS_TAB),
+      fetchSheet(META_TAB),
+    ]);
+
+    calendarData = calRows.filter(r => r.destination);
+    dealsData    = dealRows.filter(r => r.matchFound === 'TRUE' && r.matchScore === 'high');
+
+    // last-updated meta
+    const calMeta = metaRows.find(r => r.key === 'lastCalendarRefresh');
+    if (calMeta) {
+      const d = new Date(calMeta.value);
+      document.getElementById('last-updated').textContent =
+        'Updated ' + d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    } else {
+      document.getElementById('last-updated').textContent = '';
+    }
+
+    renderBanner();
+    renderCalendar();
+  } catch(e) {
+    document.getElementById('calendar').innerHTML =
+      `<div class="empty-state">Could not load calendar data.<br><small style="color:#bbb">${e.message}</small></div>`;
+    document.getElementById('last-updated').textContent = '';
+    console.error(e);
+  }
+}
+
+// ── banner: recent strong deals ──────────────────────────────
+function renderBanner() {
+  const cutoff = new Date(Date.now() - DEAL_DAYS_BACK * 86400000).toISOString();
+  const recent = dealsData.filter(d => d.date >= cutoff);
+  if (recent.length === 0) return;
+
+  const banner = document.getElementById('deal-banner');
+  const list   = document.getElementById('banner-deals');
+  banner.style.display = 'block';
+
+  list.innerHTML = recent.slice(0, 4).map(d => `
+    <div class="banner-deal">
+      <span class="banner-dest">${d.destination}${d.country ? ', '+d.country : ''}</span>
+      <span class="banner-price">${d.price}</span>
+      <span class="banner-event">${d.calendarEvent || ''}</span>
+      ${d.permalink ? `<a href="${d.permalink}" class="banner-link" target="_blank">View deal →</a>` : ''}
+    </div>
+  `).join('');
+}
+
+// ── find matching deal for a calendar entry ──────────────────
+function findDeal(entry) {
+  const dest = (entry.destination || '').toLowerCase();
+  return dealsData.find(d => {
+    const dealDest = (d.destination || '').toLowerCase();
+    const dealCountry = (d.country || '').toLowerCase();
+    return dest.includes(dealDest) || dealDest.includes(dest.split(',')[0]) ||
+           dest.includes(dealCountry);
+  });
+}
+
+// ── group calendar data ──────────────────────────────────────
+function groupByMonthWeek(data) {
+  const months = {};
+  for (const row of data) {
+    const m = row.month || 'Unknown';
+    const w = row.weekLabel || '';
+    if (!months[m]) months[m] = {};
+    if (!months[m][w]) months[m][w] = [];
+    months[m][w].push(row);
+  }
+  return months;
+}
+
+// ── render calendar ──────────────────────────────────────────
+function renderCalendar() {
+  const cal = document.getElementById('calendar');
+
+  const filtered = calendarData.filter(row => {
+    const regionOk = activeRegion === 'all' || row.region === activeRegion;
+    const q = activeSearch.toLowerCase();
+    const searchOk = !q ||
+      (row.destination || '').toLowerCase().includes(q) ||
+      (row.event || '').toLowerCase().includes(q) ||
+      (row.hook || '').toLowerCase().includes(q);
+    return regionOk && searchOk;
+  });
+
+  if (filtered.length === 0) {
+    cal.innerHTML = '<div class="empty-state">No destinations match your search.</div>';
+    return;
+  }
+
+  const grouped = groupByMonthWeek(filtered);
+  let html = '';
+
+  for (const [month, weeks] of Object.entries(grouped)) {
+    html += `<div class="month-section"><h2 class="month-heading">${month}</h2>`;
+    for (const [weekLabel, entries] of Object.entries(weeks)) {
+      html += `<div class="week-group"><div class="week-label">${weekLabel}</div><div class="dest-grid">`;
+      for (const entry of entries) {
+        const deal   = findDeal(entry);
+        const color  = REGION_COLORS[entry.region] || '#888';
+        const hasDeal = !!deal;
+
+        html += `
+          <div class="dest-card${hasDeal ? ' has-deal' : ''}">
+            <div class="region-pip" style="background:${color}"></div>
+            <div class="card-body">
+              <div class="card-top">
+                <span class="card-dest">${entry.destination || ''}</span>
+                <span class="card-event-name">${entry.event || ''}</span>
+              </div>
+              <div class="card-hook">${entry.hook || ''}</div>
+              <div class="card-footer">
+                ${entry.eventDates ? `<span class="badge">${entry.eventDates}</span>` : ''}
+                ${entry.bookAhead === 'TRUE' ? `<span class="badge warn-badge">Book ahead</span>` : ''}
+                ${hasDeal ? `<span class="badge deal-badge">✈ ${deal.price}</span>` : ''}
+                ${hasDeal && deal.permalink ? `<a href="${deal.permalink}" class="deal-link" target="_blank">View deal →</a>` : ''}
+              </div>
+            </div>
+          </div>`;
+      }
+      html += `</div></div>`;
+    }
+    html += `</div>`;
+  }
+
+  cal.innerHTML = html;
+}
+
+// ── filter controls ──────────────────────────────────────────
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeRegion = btn.dataset.region;
+    renderCalendar();
+  });
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  activeSearch = e.target.value.trim();
+  renderCalendar();
+});
+
+// ── go ───────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

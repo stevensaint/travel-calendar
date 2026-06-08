@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elsewhere &mdash; Travel Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:        #0a0a0a;
+  --ink-mid:    #1c1c1c;
+  --ink-soft:   #2e2e2e;
+  --paper:      #f5f0e8;
+  --paper-mid:  #ede7d9;
+  --paper-soft: #e4ddd0;
+  --gold:       #c9a84c;
+  --gold-light: #e8d5a3;
+  --gold-dim:   #7a6330;
+  --muted:      #6b6355;
+  --faint:      #9b9185;
+  --green:      #2d6a4f;
+  --green-light:#d8f3dc;
+  --red:        #9b2226;
+  --border:     rgba(0,0,0,0.08);
+  --shadow:     0 2px 20px rgba(0,0,0,0.06);
+  --shadow-lg:  0 8px 48px rgba(0,0,0,0.12);
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'DM Sans', sans-serif;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* -- HEADER -- */
+.site-header {
+  background: var(--ink);
+  color: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  border-bottom: 1px solid rgba(201,168,76,0.3);
+}
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: 0.12em;
+  color: var(--paper);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.wordmark em {
+  font-style: italic;
+  color: var(--gold);
+}
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.header-updated {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* -- DEAL BANNER -- */
+.deal-banner {
+  background: var(--ink-mid);
+  border-bottom: 1px solid rgba(201,168,76,0.2);
+  padding: 0;
+  display: none;
+  overflow: hidden;
+}
+.deal-banner-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.deal-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.deal-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(201,168,76,0.3);
+  flex-shrink: 0;
+}
+.deal-items {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.deal-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--paper-mid);
+}
+.deal-item-dest { font-weight: 500; color: var(--paper); }
+.deal-item-price { color: var(--gold); font-weight: 500; }
+.deal-item-event { color: var(--faint); font-size: 12px; }
+.deal-item-link {
+  font-size: 11px;
+  color: var(--gold);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid rgba(201,168,76,0.4);
+  padding-bottom: 1px;
+  transition: border-color 0.2s;
+  white-space: nowrap;
+}
+.deal-item-link:hover { border-color: var(--gold); }
+
+/* -- HERO -- */
+.hero {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 64px 32px 56px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(201,168,76,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+}
+.hero-label {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-label::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 1px;
+  background: var(--gold-dim);
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin-bottom: 20px;
+  max-width: 700px;
+}
+.hero-title em {
+  font-style: italic;
+  color: var(--gold-light);
+}
+.hero-sub {
+  font-size: 14px;
+  color: var(--faint);
+  max-width: 480px;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+}
+
+/* -- CONTROLS -- */
+.controls-bar {
+  background: var(--paper-mid);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 64px;
+  z-index: 100;
+}
+.controls-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filter-btn {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 2px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.filter-btn:hover { color: var(--ink); border-color: var(--border); }
+.filter-btn.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.controls-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 4px;
+}
+.search-wrap {
+  margin-left: auto;
+  position: relative;
+}
+.search-wrap svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--faint);
+  pointer-events: none;
+}
+#search {
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 6px 14px 6px 30px;
+  border: 1px solid var(--border);
+  background: var(--paper);
+  color: var(--ink);
+  width: 220px;
+  outline: none;
+  border-radius: 2px;
+  transition: border-color 0.15s;
+}
+#search:focus { border-color: var(--gold-dim); }
+#search::placeholder { color: var(--faint); }
+
+/* -- MAIN LAYOUT -- */
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px 80px;
+}
+
+/* -- MONTH SECTIONS -- */
+.month-section {
+  padding-top: 64px;
+}
+.month-header {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.month-name {
+  font-family: var(--font-display);
+  font-size: 52px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.month-count {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* -- WEEK GROUPS -- */
+.week-group { margin-bottom: 40px; }
+.week-label-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.week-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 500;
+}
+.week-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* -- DESTINATION CARDS -- */
+.dest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.dest-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  cursor: default;
+  position: relative;
+}
+.dest-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(0,0,0,0.12);
+}
+.dest-card.has-deal {
+  border-color: var(--gold-dim);
+}
+.dest-card.has-deal::after {
+  content: 'DEAL';
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  font-weight: 500;
+  background: var(--gold);
+  color: var(--ink);
+  padding: 3px 8px;
+  border-radius: 2px;
+}
+
+.card-accent {
+  height: 3px;
+  width: 100%;
+}
+
+.card-main {
+  padding: 20px 22px 16px;
+}
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.region-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.card-titles { flex: 1; min-width: 0; }
+.card-dest {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.card-event {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.card-hook {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+/* -- BADGES -- */
+.card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.badge {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  padding: 3px 9px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.badge.warn {
+  border-color: rgba(155,34,38,0.3);
+  color: var(--red);
+  background: rgba(155,34,38,0.04);
+}
+.badge.deal {
+  border-color: rgba(201,168,76,0.5);
+  color: var(--gold-dim);
+  background: rgba(201,168,76,0.08);
+  font-weight: 500;
+}
+.deal-link {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--gold-dim);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(122,99,48,0.3);
+  padding-bottom: 1px;
+  white-space: nowrap;
+}
+.deal-link:hover { border-color: var(--gold-dim); }
+
+/* -- COST SECTION -- */
+.cost-section {
+  border-top: 1px solid var(--border);
+  padding: 14px 22px 16px;
+  background: var(--paper);
+}
+.cost-bar {
+  display: flex;
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  gap: 2px;
+}
+.cost-seg { border-radius: 1px; }
+.cost-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  margin-bottom: 10px;
+}
+.cost-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--faint);
+}
+.cost-row span:last-child {
+  font-weight: 500;
+  color: var(--muted);
+}
+.cost-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.cost-total-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.cost-total-val {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.cost-notes {
+  font-size: 11px;
+  color: var(--faint);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* -- STATES -- */
+.loading-state {
+  text-align: center;
+  padding: 120px 0;
+  color: var(--faint);
+}
+.loading-word {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: 0.05em;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+.error-state {
+  background: white;
+  border: 1px solid rgba(155,34,38,0.2);
+  border-radius: 4px;
+  padding: 32px;
+  margin-top: 40px;
+  max-width: 560px;
+}
+.error-state h3 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  margin-bottom: 8px;
+  color: var(--red);
+}
+.error-state p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+.error-state ol { padding-left: 18px; font-size: 13px; color: var(--muted); line-height: 2; }
+.error-state a { color: var(--gold-dim); }
+
+/* -- COST LEGEND -- */
+.cost-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 32px;
+  background: var(--paper-soft);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--faint);
+  letter-spacing: 0.04em;
+}
+.cost-legend-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 4px;
+}
+.legend-pip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.legend-pip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+/* -- RESPONSIVE -- */
+@media (max-width: 768px) {
+  .header-inner, .controls-inner, .main, .hero { padding-left: 20px; padding-right: 20px; }
+  .hero { padding-top: 40px; padding-bottom: 40px; }
+  .dest-grid { grid-template-columns: 1fr; }
+  .month-name { font-size: 40px; }
+  #search { width: 160px; }
+  .deal-banner-inner { padding: 12px 20px; }
+  .cost-legend { padding: 10px 20px; flex-wrap: wrap; gap: 10px; }
+}
+
+/* -- FADE IN -- */
+.month-section {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fadeUp 0.5s forwards;
+}
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="wordmark">Els<em>e</em>where</div>
+    <div class="header-right">
+      <span class="header-updated" id="last-updated"></span>
+    </div>
+  </div>
+</header>
+
+<!-- DEAL BANNER -->
+<div class="deal-banner" id="deal-banner">
+  <div class="deal-banner-inner">
+    <span class="deal-eyebrow">Deals matched</span>
+    <div class="deal-divider"></div>
+    <div class="deal-items" id="banner-deals"></div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-label">Week by week &middot; 12 months &middot; From LAX</div>
+    <h1 class="hero-title">The right place,<br><em>at the right time.</em></h1>
+    <p class="hero-sub">Every destination, matched to the exact week it's worth going. Festivals, harvests, solstices, peak seasons &mdash; curated and kept current.</p>
+  </div>
+</section>
+
+<!-- CONTROLS -->
+<div class="controls-bar">
+  <div class="controls-inner">
+    <button class="filter-btn active" data-region="all">All</button>
+    <button class="filter-btn" data-region="europe">Europe</button>
+    <button class="filter-btn" data-region="asia">Asia</button>
+    <button class="filter-btn" data-region="americas">Americas</button>
+    <button class="filter-btn" data-region="africa">Africa & ME</button>
+    <button class="filter-btn" data-region="oceania">Oceania</button>
+    <div class="controls-sep"></div>
+    <div class="search-wrap">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search" placeholder="Search destinations, events..." autocomplete="off">
+    </div>
+  </div>
+</div>
+
+<!-- COST LEGEND -->
+<div class="cost-legend">
+  <span class="cost-legend-label">12-day cost</span>
+  <span class="legend-pip"><span class="legend-pip-dot" style="background:#4a7fc1"></span>Flight</span>
+  <span class="legend-pip"><span class="legend-pip-dot" style="background:#c47c3a"></span>Housing</span>
+  <span class="legend-pip"><span class="legend-pip-dot" style="background:#3a8a5c"></span>Food</span>
+  <span class="legend-pip"><span class="legend-pip-dot" style="background:#8a6c2a"></span>Experiences</span>
+</div>
+
+<!-- CALENDAR -->
+<main class="main">
+  <div id="calendar">
+    <div class="loading-state">
+      <div class="loading-word">Loading&hellip;</div>
+    </div>
+  </div>
+</main>
+
+<script>
+var SHEET_ID     = '1t-lDfHKAXXOclTGVLn4nV0Nz3Cm6Py9VO6wS-4Uf_As';
+var CALENDAR_GID = '73191465';
+var DEALS_GID    = '0';
+var META_GID     = '965724304';
+var DEAL_DAYS_BACK = 7;
+
+var REGION_COLORS = {
+  europe:   '#4a7fc1',
+  asia:     '#c47c3a',
+  americas: '#3a8a5c',
+  africa:   '#8a6c2a',
+  oceania:  '#b04a72',
+};
+
+var REGION_ACCENTS = {
+  europe:   'linear-gradient(90deg, #4a7fc1, #6b9fd4)',
+  asia:     'linear-gradient(90deg, #c47c3a, #d9975a)',
+  americas: 'linear-gradient(90deg, #3a8a5c, #5aab7a)',
+  africa:   'linear-gradient(90deg, #8a6c2a, #b08f40)',
+  oceania:  'linear-gradient(90deg, #b04a72, #cc6a90)',
+};
+
+var calendarData = [];
+var dealsData    = [];
+var activeRegion = 'all';
+var activeSearch = '';
+
+function csvUrl(gid) {
+  return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/export?format=csv&gid=' + gid;
+}
+
+function parseCSV(text) {
+  var lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  var headers = splitCSVLine(lines[0]);
+  var rows = [];
+  for (var i = 1; i < lines.length; i++) {
+    var vals = splitCSVLine(lines[i]);
+    var obj = {};
+    headers.forEach(function(h, idx) { obj[h.trim()] = (vals[idx] || '').trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function splitCSVLine(line) {
+  var result = [], current = '', inQuotes = false;
+  for (var i = 0; i < line.length; i++) {
+    var c = line[i];
+    if (c === '"') {
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (c === ',' && !inQuotes) {
+      result.push(current); current = '';
+    } else current += c;
+  }
+  result.push(current);
+  return result;
+}
+
+async function fetchTab(gid) {
+  var res = await fetch(csvUrl(gid));
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' &mdash; make sure the Sheet is shared publicly (Anyone with link &rarr; Viewer)');
+  return parseCSV(await res.text());
+}
+
+function showError(msg) {
+  document.getElementById('last-updated').textContent = 'Error';
+  document.getElementById('calendar').innerHTML =
+    '<div class="error-state">'
+    + '<h3>Could not load calendar</h3>'
+    + '<p>' + msg + '</p>'
+    + '<ol>'
+    + '<li>Open your <a href="https://docs.google.com/spreadsheets/d/' + SHEET_ID + '" target="_blank">Google Sheet</a></li>'
+    + '<li>Click <strong>Share</strong> &rarr; Change to <strong>Anyone with the link</strong> &rarr; Viewer</li>'
+    + '<li>Reload this page</li>'
+    + '</ol>'
+    + '</div>';
+}
+
+async function init() {
+  try {
+    var calRows  = await fetchTab(CALENDAR_GID);
+    var dealRows = await fetchTab(DEALS_GID);
+    var metaRows = await fetchTab(META_GID);
+
+    calendarData = calRows.filter(function(r) { return r.destination && r.destination.length > 0; });
+    dealsData    = dealRows.filter(function(r) { return r.matchFound === 'TRUE' && r.matchScore === 'high'; });
+
+    var calMeta = metaRows.find(function(r) { return r.key === 'lastCalendarRefresh'; });
+    if (calMeta && calMeta.value) {
+      var d = new Date(calMeta.value);
+      document.getElementById('last-updated').textContent =
+        'Updated ' + d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    }
+
+    renderBanner();
+    renderCalendar();
+  } catch(e) {
+    console.error(e);
+    showError(e.message);
+  }
+}
+
+function renderBanner() {
+  var cutoff = new Date(Date.now() - DEAL_DAYS_BACK * 86400000).toISOString();
+  var recent = dealsData.filter(function(d) { return d.date >= cutoff; });
+  if (!recent.length) return;
+
+  document.getElementById('deal-banner').style.display = 'block';
+  document.getElementById('banner-deals').innerHTML = recent.slice(0, 5).map(function(d) {
+    return '<div class="deal-item">'
+      + '<span class="deal-item-dest">' + (d.destination || '') + (d.country ? ', ' + d.country : '') + '</span>'
+      + '<span class="deal-item-price">' + (d.price || '') + '</span>'
+      + '<span class="deal-item-event">' + (d.calendarEvent || '') + '</span>'
+      + (d.permalink ? '<a href="' + d.permalink + '" class="deal-item-link" target="_blank">View &rarr;</a>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function findDeal(entry) {
+  var dest = (entry.destination || '').toLowerCase();
+  return dealsData.find(function(d) {
+    var dd = (d.destination || '').toLowerCase();
+    var dc = (d.country || '').toLowerCase();
+    return dest.includes(dd) || dd.includes(dest.split(',')[0].trim()) || dest.includes(dc);
+  });
+}
+
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function buildCostSection(entry) {
+  var flight  = parseFloat(entry.flightCost) || 0;
+  var housing = parseFloat(entry.housingCost) || 0;
+  var food    = parseFloat(entry.foodCost) || 0;
+  var experi  = parseFloat(entry.experientialCost) || 0;
+  var total   = parseFloat(entry.totalCost) || (flight + housing + food + experi);
+  if (!total) return '';
+
+  var pF = Math.round(flight  / total * 100);
+  var pH = Math.round(housing / total * 100);
+  var pFo= Math.round(food    / total * 100);
+  var pE = 100 - pF - pH - pFo;
+
+  return '<div class="cost-section">'
+    + '<div class="cost-bar">'
+    + '<div class="cost-seg" style="width:' + pF  + '%;background:#4a7fc1"></div>'
+    + '<div class="cost-seg" style="width:' + pH  + '%;background:#c47c3a"></div>'
+    + '<div class="cost-seg" style="width:' + pFo + '%;background:#3a8a5c"></div>'
+    + '<div class="cost-seg" style="width:' + pE  + '%;background:#8a6c2a"></div>'
+    + '</div>'
+    + '<div class="cost-grid">'
+    + '<div class="cost-row"><span>Flight (LAX)</span><span>' + fmt(flight)  + '</span></div>'
+    + '<div class="cost-row"><span>Housing &middot; 12 nights</span><span>' + fmt(housing) + '</span></div>'
+    + '<div class="cost-row"><span>Food & drink</span><span>' + fmt(food)    + '</span></div>'
+    + '<div class="cost-row"><span>Experiences</span><span>' + fmt(experi)   + '</span></div>'
+    + '</div>'
+    + '<div class="cost-total-row">'
+    + '<span class="cost-total-label">12-day estimate</span>'
+    + '<span class="cost-total-val">' + fmt(total) + '</span>'
+    + '</div>'
+    + (entry.costNotes ? '<div class="cost-notes">' + entry.costNotes + '</div>' : '')
+    + '</div>';
+}
+
+function groupByMonthWeek(data) {
+  var months = {};
+  data.forEach(function(row) {
+    var m = row.month || 'Unknown';
+    var w = row.weekLabel || '';
+    if (!months[m]) months[m] = {};
+    if (!months[m][w]) months[m][w] = [];
+    months[m][w].push(row);
+  });
+  return months;
+}
+
+function renderCalendar() {
+  var cal = document.getElementById('calendar');
+
+  var filtered = calendarData.filter(function(row) {
+    var regionOk = activeRegion === 'all' || row.region === activeRegion;
+    var q = activeSearch.toLowerCase();
+    var searchOk = !q
+      || (row.destination || '').toLowerCase().includes(q)
+      || (row.event || '').toLowerCase().includes(q)
+      || (row.hook || '').toLowerCase().includes(q);
+    return regionOk && searchOk;
+  });
+
+  if (!filtered.length) {
+    cal.innerHTML = '<div class="loading-state"><div class="loading-word" style="font-size:22px">No destinations found.</div></div>';
+    return;
+  }
+
+  var grouped = groupByMonthWeek(filtered);
+  var html = '';
+  var delay = 0;
+
+  Object.keys(grouped).forEach(function(month) {
+    var weeks = grouped[month];
+    var count = Object.values(weeks).reduce(function(a, b) { return a + b.length; }, 0);
+
+    html += '<div class="month-section" style="animation-delay:' + delay + 'ms">';
+    html += '<div class="month-header">'
+      + '<h2 class="month-name">' + month + '</h2>'
+      + '<span class="month-count">' + count + ' destination' + (count !== 1 ? 's' : '') + '</span>'
+      + '</div>';
+
+    delay += 60;
+
+    Object.keys(weeks).forEach(function(weekLabel) {
+      var entries = weeks[weekLabel];
+      html += '<div class="week-group">'
+        + '<div class="week-label-row"><span class="week-label">' + weekLabel + '</span><div class="week-rule"></div></div>'
+        + '<div class="dest-grid">';
+
+      entries.forEach(function(entry) {
+        var deal    = findDeal(entry);
+        var hasDeal = !!deal;
+        var color   = REGION_COLORS[entry.region]   || '#888';
+        var accent  = REGION_ACCENTS[entry.region]  || 'linear-gradient(90deg, #888, #aaa)';
+        var cost    = buildCostSection(entry);
+
+        html += '<div class="dest-card' + (hasDeal ? ' has-deal' : '') + '">'
+          + '<div class="card-accent" style="background:' + accent + '"></div>'
+          + '<div class="card-main">'
+          + '<div class="card-top">'
+          + '<div class="region-pip" style="background:' + color + '"></div>'
+          + '<div class="card-titles">'
+          + '<div class="card-dest">' + (entry.destination || '') + '</div>'
+          + '<div class="card-event">' + (entry.event || '') + '</div>'
+          + '</div></div>'
+          + '<div class="card-hook">' + (entry.hook || '') + '</div>'
+          + '<div class="card-badges">'
+          + (entry.eventDates ? '<span class="badge">' + entry.eventDates + '</span>' : '')
+          + (entry.bookAhead === 'TRUE' ? '<span class="badge warn">Book ahead</span>' : '')
+          + (hasDeal ? '<span class="badge deal">' + deal.price + ' from LAX</span>' : '')
+          + (hasDeal && deal.permalink ? '<a href="' + deal.permalink + '" class="deal-link" target="_blank">View deal &rarr;</a>' : '')
+          + '</div>'
+          + '</div>'
+          + cost
+          + '</div>';
+      });
+
+      html += '</div></div>';
+    });
+
+    html += '</div>';
+  });
+
+  cal.innerHTML = html;
+}
+
+document.querySelectorAll('.filter-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    activeRegion = btn.dataset.region;
+    renderCalendar();
+  });
+});
+
+document.getElementById('search').addEventListener('input', function(e) {
+  activeSearch = e.target.value.trim();
+  renderCalendar();
+});
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green:       #1D9E75;
+    --green-light: #E1F5EE;
+    --green-mid:   #5DCAA5;
+    --amber:       #BA7517;
+    --amber-light: #FFF8E1;
+    --text-primary:   #0f0f0f;
+    --text-secondary: #5a5a5a;
+    --text-muted:     #999;
+    --border:      #e8e8e8;
+    --bg:          #fafafa;
+    --card-bg:     #ffffff;
+    --region-europe:  #378ADD;
+    --region-asia:    #D85A30;
+    --region-americas:#1D9E75;
+    --region-africa:  #BA7517;
+    --region-oceania: #D4537E;
+  }
+  html { font-size: 16px; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-primary); line-height: 1.6; min-height: 100vh; }
+  a { color: var(--green); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .site-header { border-bottom: 1px solid var(--border); background: #fff; position: sticky; top: 0; z-index: 100; }
+  .header-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 56px; display: flex; align-items: center; gap: 24px; }
+  .site-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 500; color: var(--text-primary); white-space: nowrap; }
+  .header-meta { font-size: 12px; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+  .main { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  #deal-banner { background: var(--green-light); border: 1px solid var(--green-mid); border-radius: 10px; padding: 14px 18px; margin-bottom: 32px; display: none; }
+  .banner-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--green); margin-bottom: 8px; }
+  .banner-deals { display: flex; flex-direction: column; gap: 8px; }
+  .banner-deal { display: flex; align-items: baseline; gap: 10px; font-size: 14px; flex-wrap: wrap; }
+  .banner-dest { font-weight: 600; color: var(--text-primary); }
+  .banner-price { color: var(--green); font-weight: 600; }
+  .banner-event { color: var(--text-secondary); }
+  .banner-link { margin-left: auto; font-size: 13px; color: var(--green); white-space: nowrap; }
+
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 32px; }
+  .filter-btn { font-size: 13px; font-family: 'Inter', sans-serif; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.12s; }
+  .filter-btn:hover { border-color: #bbb; color: var(--text-primary); }
+  .filter-btn.active { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
+  .search-wrap { margin-left: auto; position: relative; }
+  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+  #search { font-family: 'Inter', sans-serif; font-size: 13px; padding: 7px 14px 7px 32px; border-radius: 20px; border: 1px solid var(--border); background: #fff; color: var(--text-primary); width: 200px; outline: none; }
+  #search:focus { border-color: #aaa; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 28px; font-size: 12px; color: var(--text-muted); align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .month-section { margin-bottom: 48px; }
+  .month-heading { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 500; color: var(--text-primary); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .week-group { margin-bottom: 24px; }
+  .week-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .dest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+
+  .dest-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; transition: border-color 0.12s; position: relative; }
+  .dest-card:hover { border-color: #ccc; }
+  .dest-card.has-deal { border-color: var(--green-mid); background: linear-gradient(135deg, #fff 0%, #f6fdf9 100%); }
+  .region-pip { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+  .card-body { flex: 1; min-width: 0; }
+  .card-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+  .card-dest { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .card-event-name { font-size: 11px; color: var(--text-muted); }
+  .card-hook { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px; }
+  .card-footer { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); color: var(--text-muted); white-space: nowrap; }
+  .badge.deal-badge { background: var(--green-light); color: #0F6E56; border-color: var(--green-mid); font-weight: 600; }
+  .badge.warn-badge { background: var(--amber-light); color: var(--amber); border-color: #FFD54F; }
+  .deal-link { margin-left: auto; font-size: 12px; color: var(--green); white-space: nowrap; }
+
+  .cost-bar { display: flex; gap: 0; margin: 10px 0 8px; border-radius: 6px; overflow: hidden; height: 6px; }
+  .cost-seg { height: 100%; }
+  .cost-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin-bottom: 8px; }
+  .cost-item { font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; }
+  .cost-item span:last-child { font-weight: 500; color: var(--text-secondary); }
+  .cost-total { font-size: 13px; font-weight: 600; color: var(--text-primary); display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px solid var(--border); margin-bottom: 4px; }
+  .cost-notes { font-size: 11px; color: var(--text-muted); font-style: italic; line-height: 1.4; }
+  .cost-section { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+
+  .loading-state { text-align: center; padding: 80px 0; color: var(--text-muted); font-size: 15px; }
+  .spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-state { background: #fff3f3; border: 1px solid #ffcdd2; border-radius: 10px; padding: 20px 24px; font-size: 14px; color: #c62828; }
+  .error-state strong { display: block; margin-bottom: 8px; font-size: 15px; }
+  .error-state ol { padding-left: 18px; margin-top: 8px; line-height: 2; color: #555; }
+
+  @media (max-width: 600px) {
+    .header-inner { padding: 0 16px; }
+    .main { padding: 24px 16px 60px; }
+    .dest-grid { grid-template-columns: 1fr; }
+    #search { width: 140px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <span class="site-title">Travel Calendar</span>
+    <span class="header-meta" id="last-updated">Loading...</span>
+  </div>
+</header>
+
+<main class="main">
+
+  <div id="deal-banner">
+    <div class="banner-label">Flight deals matched to your calendar</div>
+    <div class="banner-deals" id="banner-deals"></div>
+  </div>
+
+  <div class="controls">
+    <button class="filter-btn active" data-region="all">All</button>
+    <button class="filter-btn" data-region="europe">Europe</button>
+    <button class="filter-btn" data-region="asia">Asia</button>
+    <button class="filter-btn" data-region="americas">Americas</button>
+    <button class="filter-btn" data-region="africa">Africa & Middle East</button>
+    <button class="filter-btn" data-region="oceania">Oceania</button>
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search" placeholder="Search events, cities..." autocomplete="off">
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:var(--region-europe)"></span>Europe</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--region-asia)"></span>Asia</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--region-americas)"></span>Americas</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--region-africa)"></span>Africa & ME</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--region-oceania)"></span>Oceania</span>
+  </div>
+
+  <div class="cost-legend" style="display:flex;gap:14px;margin-bottom:28px;font-size:11px;color:var(--text-muted);align-items:center;flex-wrap:wrap;">
+    <span style="font-weight:500;font-size:12px;color:var(--text-secondary)">12-day cost breakdown:</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block"></span>Flight</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#D85A30;display:inline-block"></span>Housing</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;display:inline-block"></span>Food</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#BA7517;display:inline-block"></span>Experiences</span>
+  </div>
+
+  <div id="calendar">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      Loading calendar...
+    </div>
+  </div>
+
+</main>
+
+<script>
+// Sheet ID and tab GIDs (gid= found in the Sheet URL when you click each tab)
+// To find a tab's GID: click the tab in your Sheet, look at the URL: ...#gid=XXXXXXX
+// Calendar tab is usually gid=0 (first tab). Check yours and update if needed.
+var SHEET_ID      = '1t-lDfHKAXXOclTGVLn4nV0Nz3Cm6Py9VO6wS-4Uf_As';
+var CALENDAR_GID  = '73191465';      // UPDATE if Calendar tab is not the first tab
+var DEALS_GID     = '0';      // UPDATE if Deals tab is not the second tab
+var META_GID      = '965724304';      // UPDATE if Meta tab is not the third tab
+var DEAL_DAYS_BACK = 7;
+
+var REGION_COLORS = {
+  europe:   'var(--region-europe)',
+  asia:     'var(--region-asia)',
+  americas: 'var(--region-americas)',
+  africa:   'var(--region-africa)',
+  oceania:  'var(--region-oceania)',
+};
+
+var calendarData = [];
+var dealsData    = [];
+var activeRegion = 'all';
+var activeSearch = '';
+
+// CSV export endpoint -- works cross-origin, no CORS issues
+function csvUrl(gid) {
+  return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID
+    + '/export?format=csv&gid=' + gid;
+}
+
+function parseCSV(text) {
+  var lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  var headers = splitCSVLine(lines[0]);
+  var rows = [];
+  for (var i = 1; i < lines.length; i++) {
+    var vals = splitCSVLine(lines[i]);
+    var obj = {};
+    headers.forEach(function(h, idx) {
+      obj[h.trim()] = (vals[idx] || '').trim();
+    });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function splitCSVLine(line) {
+  // handles quoted fields with commas inside
+  var result = [];
+  var current = '';
+  var inQuotes = false;
+  for (var i = 0; i < line.length; i++) {
+    var c = line[i];
+    if (c === '"') {
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+      else { inQuotes = !inQuotes; }
+    } else if (c === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += c;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+async function fetchTab(gid) {
+  var res = await fetch(csvUrl(gid));
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching gid=' + gid);
+  var text = await res.text();
+  return parseCSV(text);
+}
+
+function showError(msg) {
+  document.getElementById('last-updated').textContent = 'Error';
+  document.getElementById('calendar').innerHTML =
+    '<div class="error-state">'
+    + '<strong>Could not load calendar data</strong>'
+    + '<p>' + msg + '</p>'
+    + '<ol>'
+    + '<li>Open your <a href="https://docs.google.com/spreadsheets/d/' + SHEET_ID + '" target="_blank">Google Sheet</a></li>'
+    + '<li>Click each tab (Calendar, Deals, Meta) and note the <code>gid=</code> number in the URL</li>'
+    + '<li>Update <code>CALENDAR_GID</code>, <code>DEALS_GID</code>, <code>META_GID</code> in this HTML file to match</li>'
+    + '<li>Make sure File &rarr; Share &rarr; Publish to web is set to "Entire document"</li>'
+    + '</ol>'
+    + '</div>';
+}
+
+async function init() {
+  try {
+    var calRows  = await fetchTab(CALENDAR_GID);
+    var dealRows = await fetchTab(DEALS_GID);
+    var metaRows = await fetchTab(META_GID);
+
+    calendarData = calRows.filter(function(r) { return r.destination && r.destination.length > 0; });
+    dealsData    = dealRows.filter(function(r) { return r.matchFound === 'TRUE' && r.matchScore === 'high'; });
+
+    var calMeta = metaRows.find(function(r) { return r.key === 'lastCalendarRefresh'; });
+    if (calMeta && calMeta.value) {
+      var d = new Date(calMeta.value);
+      document.getElementById('last-updated').textContent =
+        'Updated ' + d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    } else {
+      document.getElementById('last-updated').textContent = '';
+    }
+
+    renderBanner();
+    renderCalendar();
+
+  } catch(e) {
+    console.error(e);
+    showError(e.message);
+  }
+}
+
+function renderBanner() {
+  var cutoff = new Date(Date.now() - DEAL_DAYS_BACK * 86400000).toISOString();
+  var recent = dealsData.filter(function(d) { return d.date >= cutoff; });
+  if (recent.length === 0) return;
+  document.getElementById('deal-banner').style.display = 'block';
+  document.getElementById('banner-deals').innerHTML = recent.slice(0, 4).map(function(d) {
+    return '<div class="banner-deal">'
+      + '<span class="banner-dest">' + (d.destination || '') + (d.country ? ', ' + d.country : '') + '</span>'
+      + '<span class="banner-price">' + (d.price || '') + '</span>'
+      + '<span class="banner-event">' + (d.calendarEvent || '') + '</span>'
+      + (d.permalink ? '<a href="' + d.permalink + '" class="banner-link" target="_blank">View deal</a>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function findDeal(entry) {
+  var dest = (entry.destination || '').toLowerCase();
+  return dealsData.find(function(d) {
+    var dd = (d.destination || '').toLowerCase();
+    var dc = (d.country || '').toLowerCase();
+    return dest.includes(dd) || dd.includes(dest.split(',')[0].trim()) || dest.includes(dc);
+  });
+}
+
+function groupByMonthWeek(data) {
+  var months = {};
+  data.forEach(function(row) {
+    var m = row.month || 'Unknown';
+    var w = row.weekLabel || '';
+    if (!months[m]) months[m] = {};
+    if (!months[m][w]) months[m][w] = [];
+    months[m][w].push(row);
+  });
+  return months;
+}
+
+function renderCalendar() {
+  var cal = document.getElementById('calendar');
+  var filtered = calendarData.filter(function(row) {
+    var regionOk = activeRegion === 'all' || row.region === activeRegion;
+    var q = activeSearch.toLowerCase();
+    var searchOk = !q
+      || (row.destination || '').toLowerCase().includes(q)
+      || (row.event || '').toLowerCase().includes(q)
+      || (row.hook || '').toLowerCase().includes(q);
+    return regionOk && searchOk;
+  });
+
+  if (filtered.length === 0) {
+    cal.innerHTML = '<div class="loading-state" style="padding:60px 0">No destinations match.</div>';
+    return;
+  }
+
+  var grouped = groupByMonthWeek(filtered);
+  var html = '';
+
+  Object.keys(grouped).forEach(function(month) {
+    html += '<div class="month-section"><h2 class="month-heading">' + month + '</h2>';
+    Object.keys(grouped[month]).forEach(function(weekLabel) {
+      var entries = grouped[month][weekLabel];
+      html += '<div class="week-group"><div class="week-label">' + weekLabel + '</div><div class="dest-grid">';
+      entries.forEach(function(entry) {
+        var deal    = findDeal(entry);
+        var color   = REGION_COLORS[entry.region] || '#888';
+        var hasDeal = !!deal;
+        var flight = parseFloat(entry.flightCost) || 0;
+        var housing = parseFloat(entry.housingCost) || 0;
+        var food    = parseFloat(entry.foodCost) || 0;
+        var experi  = parseFloat(entry.experientialCost) || 0;
+        var total   = parseFloat(entry.totalCost) || (flight + housing + food + experi);
+        var hasCost = total > 0;
+
+        var costBar = '';
+        var costDetail = '';
+        if (hasCost) {
+          var pFlight  = Math.round(flight / total * 100);
+          var pHousing = Math.round(housing / total * 100);
+          var pFood    = Math.round(food / total * 100);
+          var pExperi  = 100 - pFlight - pHousing - pFood;
+          costBar = '<div class="cost-bar">'
+            + '<div class="cost-seg" style="width:' + pFlight + '%;background:#378ADD"></div>'
+            + '<div class="cost-seg" style="width:' + pHousing + '%;background:#D85A30"></div>'
+            + '<div class="cost-seg" style="width:' + pFood + '%;background:#1D9E75"></div>'
+            + '<div class="cost-seg" style="width:' + pExperi + '%;background:#BA7517"></div>'
+            + '</div>';
+          costDetail = '<div class="cost-section">'
+            + costBar
+            + '<div class="cost-grid">'
+            + '<div class="cost-item"><span>Flight (LAX)</span><span>$' + Math.round(flight).toLocaleString() + '</span></div>'
+            + '<div class="cost-item"><span>Housing (12n)</span><span>$' + Math.round(housing).toLocaleString() + '</span></div>'
+            + '<div class="cost-item"><span>Food & drink</span><span>$' + Math.round(food).toLocaleString() + '</span></div>'
+            + '<div class="cost-item"><span>Experiences</span><span>$' + Math.round(experi).toLocaleString() + '</span></div>'
+            + '</div>'
+            + '<div class="cost-total"><span>12-day estimate</span><span>$' + Math.round(total).toLocaleString() + '</span></div>'
+            + (entry.costNotes ? '<div class="cost-notes">' + entry.costNotes + '</div>' : '')
+            + '</div>';
+        }
+
+        html += '<div class="dest-card' + (hasDeal ? ' has-deal' : '') + '">'
+          + '<div class="region-pip" style="background:' + color + '"></div>'
+          + '<div class="card-body">'
+          + '<div class="card-top">'
+          + '<span class="card-dest">' + (entry.destination || '') + '</span>'
+          + '<span class="card-event-name">' + (entry.event || '') + '</span>'
+          + '</div>'
+          + '<div class="card-hook">' + (entry.hook || '') + '</div>'
+          + '<div class="card-footer">'
+          + (entry.eventDates ? '<span class="badge">' + entry.eventDates + '</span>' : '')
+          + (entry.bookAhead === 'TRUE' ? '<span class="badge warn-badge">Book ahead</span>' : '')
+          + (hasDeal ? '<span class="badge deal-badge">Deal: ' + deal.price + '</span>' : '')
+          + (hasDeal && deal.permalink ? '<a href="' + deal.permalink + '" class="deal-link" target="_blank">View deal</a>' : '')
+          + '</div>'
+          + costDetail
+          + '</div></div>';
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+  });
+
+  cal.innerHTML = html;
+}
+
+document.querySelectorAll('.filter-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    activeRegion = btn.dataset.region;
+    renderCalendar();
+  });
+});
+
+document.getElementById('search').addEventListener('input', function(e) {
+  activeSearch = e.target.value.trim();
+  renderCalendar();
+});
+
+init();
+</script>
+</body>
+</html>

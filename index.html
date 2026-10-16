@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Elsewhere &mdash; Travel Calendar</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%230a0a0a%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 font-family=%27Georgia,serif%27 font-style=%27italic%27 fill=%27%23c9a84c%27%3EE%3C/text%3E%3C/svg%3E">
+<meta name="description" content="A calendar of the best festivals, parades, races and natural wonders around the world, month by month, with a 12-day trip cost estimate for each.">
+<meta property="og:title" content="Elsewhere - the world's best events, month by month">
+<meta property="og:description" content="A calendar of the best festivals, parades, races and natural wonders around the world, month by month, with a 12-day trip cost estimate for each.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0a0a0a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -161,6 +167,8 @@ main{max-width:1240px;margin:0 auto;padding:0 28px}
 .btn:hover{opacity:0.88;transform:translateY(-1px)}
 .btn.p{background:var(--ink);color:var(--paper)}
 .btn.s{background:#fff;color:var(--ink);border:1px solid var(--border-strong)}
+.notice{font-size:12.5px;line-height:1.55;color:var(--muted);padding:11px 14px;border-left:2px solid var(--gold,#c9a84c);background:rgba(201,168,76,0.08);border-radius:2px;margin:6px 0 14px}
+.notice b{color:var(--ink)}.notice a{color:#8a6c2a;text-decoration:underline;white-space:nowrap}
 .book-note{font-size:11px;color:var(--faint);margin-top:10px}
 
 .side{display:flex;flex-direction:column;gap:20px}
@@ -232,12 +240,13 @@ main{max-width:1240px;margin:0 auto;padding:0 28px}
 <main><div id="app"><div class="empty">Loading&hellip;</div></div></main>
 <footer class="foot">
   <a class="globe-link" href="globe.html">Prefer the world view? Explore the globe &rarr;</a>
-  <small>Events refreshed weekly &middot; flight deals checked daily</small>
+  <small>Events refreshed weekly &middot; Dates and costs are estimates &mdash; always confirm with the official organizer before booking.</small>
 </footer>
 
 <script>
 var SHEET_ID='1t-lDfHKAXXOclTGVLn4nV0Nz3Cm6Py9VO6wS-4Uf_As';
 var CALENDAR_GID='73191465', DEALS_GID='0', META_GID='965724304';
+var SHOW_DEALS=/[?&]deals=1/.test(location.search); // private owner view only
 var HOME='LAX', TRIP_DAYS=12, DEAL_DAYS_BACK=14, STALE_DAYS=9, MAX_LANES=3;
 
 var RC={europe:'#4a7fc1',asia:'#c47c3a',americas:'#3a8a5c',africa:'#8a6c2a',oceania:'#b04a72'};
@@ -351,7 +360,7 @@ function urgency(ev){
   if(n<=14)return {t:'Starts in '+n+' day'+(n===1?'':'s')+' – book immediately',hot:true};
   if(n<=60)return {t:n+' days away – book soon',hot:true};
   if(n<=120)return {t:Math.round(n/7)+' weeks out – good time to book flights',hot:false};
-  if(n<=200)return {t:'About '+Math.round(n/30)+' months away – watch for deals',hot:false};
+  if(n<=200)return {t:'About '+Math.round(n/30)+' months away – start watching flight prices',hot:false};
   return {t:Math.round(n/30)+' months away',hot:false};
 }
 function tripDates(ev){
@@ -387,7 +396,7 @@ function cardHtml(ev){
    +'<div class="card-acc" style="background:'+c+'"></div><div class="card-body">'
    +'<div class="card-top"><span class="pip" style="background:'+c+'"></span><div><div class="card-event">'+esc(ev.event)+'</div><div class="card-dest">'+esc(ev.destination)+'</div></div></div>'
    +'<div class="card-hook">'+esc(ev.hook)+'</div>'
-   +'<div class="card-foot"><span class="cb">'+esc(ev.eventDates)+'</span>'
+   +'<div class="card-foot"><span class="cb">'+(ev.approx?'~ ':'')+esc(ev.eventDates)+'</span>'
    +(ev.bookAhead?'<span class="cb warn">Book ahead</span>':'')
    +(ev.deal?'<span class="cb deal"><span class="dd"></span>'+esc(ev.deal.price||'Deal')+' from '+HOME+'</span>':'')
    +'</div>'+tagsHtml(ev)+'</div></button>';
@@ -463,7 +472,7 @@ function viewMonth(key){
     }
     html+='<div class="wk"><button class="wkbtn" data-w="'+iso(ws)+'" title="Open this week">'+fmtShort(ws)+' – '+(ws.getMonth()===we.getMonth()?we.getDate():fmtShort(we))+'</button><div class="wkgrid">'+days+bars+'</div></div>';
   }
-  html+='<div class="legend">'+Object.keys(RC).map(function(k){return '<span><i class="sw" style="background:'+RC[k]+'"></i>'+k+'</span>'}).join('')+'<span><span class="dd"></span>Flight deal</span></div></div>';
+  html+='<div class="legend">'+Object.keys(RC).map(function(k){return '<span><i class="sw" style="background:'+RC[k]+'"></i>'+k+'</span>'}).join('')+(SHOW_DEALS?'<span><span class="dd"></span>Flight deal</span>':'')+'</div></div>';
 
   var mEnd=new Date(first.getFullYear(),first.getMonth()+1,0);
   var inMonth=list.filter(function(ev){return overlaps(ev,first,mEnd)}).sort(function(a,b){return a.sIso<b.sIso?-1:a.sIso>b.sIso?1:0});
@@ -495,6 +504,7 @@ function backHref(){return '#m='+(lastMonth||defaultMonth())}
 function backLabel(){var d=mdate(lastMonth||defaultMonth());return MONTHS[d.getMonth()]+' '+d.getFullYear()}
 function backBtn(){return '<a class="back" href="'+backHref()+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>'+esc(backLabel())+'</a>'}
 
+function officialUrl(ev){return 'https://www.google.com/search?q='+encodeURIComponent(ev.event+' '+ev.city+' '+ev.s.getFullYear()+' official site dates')}
 function viewEvent(ev){
   if(!lastMonth)lastMonth=mkey(ev.s<TODAY&&ev.e>=TODAY?TODAY:ev.s);
   var c=color(ev),u=urgency(ev),tr=tripDates(ev);
@@ -518,6 +528,7 @@ function viewEvent(ev){
    +tagsHtml(ev,'d-tags')
    +(ev.bookAhead?'<div class="d-tags"><span class="cb warn">Book ahead &ndash; this one sells out</span></div>':'')
    +dealHtml
+   +'<div class="notice">'+(ev.approx?'<b>Dates are estimated.</b> ':'')+'Event dates can change &mdash; confirm with the official organizer before booking anything. <a target="_blank" rel="noopener" href="'+esc(officialUrl(ev))+'">Find the official site &rarr;</a></div>'
    +'<div class="book"><a class="btn p" target="_blank" rel="noopener" href="'+esc(flightsUrl(ev.destination,tr))+'">Search flights on Google &rarr;</a>'
    +'<a class="btn s" target="_blank" rel="noopener" href="'+esc(staysUrl(ev.city,tr))+'">Find stays on Airbnb &rarr;</a></div>'
    +'<div class="book-note">Searches use '+esc(fmtShort(tr.dep))+' → '+esc(fmtShort(tr.ret))+' ('+TRIP_DAYS+' days). Adjust dates on the site.</div></div>'
@@ -606,7 +617,7 @@ function showError(msg,sheet){
 function init(){
   Promise.all([
     fetchTab(CALENDAR_GID),
-    fetchTab(DEALS_GID).catch(function(){return []}),
+    SHOW_DEALS?fetchTab(DEALS_GID).catch(function(){return []}):Promise.resolve([]),
     fetchTab(META_GID).catch(function(){return []})
   ]).then(function(res){
     EVENTS=res[0].map(normEvent).filter(Boolean);

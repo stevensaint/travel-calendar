@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Elsewhere &mdash; Globe</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%230a0a0a%27/%3E%3Ctext x=%2732%27 y=%2746%27 font-size=%2740%27 text-anchor=%27middle%27 font-family=%27Georgia,serif%27 font-style=%27italic%27 fill=%27%23c9a84c%27%3EE%3C/text%3E%3C/svg%3E">
+<meta name="description" content="Explore the best events around the world on a 3D globe.">
+<meta name="theme-color" content="#0a0a0a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -89,7 +92,7 @@ body{font-family:var(--font-b);background:var(--ink);color:var(--ink);overflow:h
     <div class="sl"><span class="dot" style="background:#4caf7d"></span>Summer</div>
     <div class="sl"><span class="dot" style="background:#e07340"></span>Autumn</div>
     <div class="sl"><span class="dot" style="background:#5b9bd5"></span>Winter</div>
-    <div class="sl"><span class="dot" style="background:#e040fb;border:2px solid #fff"></span>Flight deal</div>
+    <div class="sl" id="deal-legend" style="display:none"><span class="dot" style="background:#e040fb;border:2px solid #fff"></span>Flight deal</div>
   </div>
   <div class="gpanel" id="gpanel">
     <div class="gp-accent" id="gp-accent"></div>
@@ -102,6 +105,7 @@ body{font-family:var(--font-b);background:var(--ink);color:var(--ink);overflow:h
 <script>
 var SHEET_ID='1t-lDfHKAXXOclTGVLn4nV0Nz3Cm6Py9VO6wS-4Uf_As';
 var CALENDAR_GID='73191465', DEALS_GID='0';
+var SHOW_DEALS=/[?&]deals=1/.test(location.search); // private owner view only
 var HOME='LAX', TRIP_DAYS=12, DEAL_DAYS_BACK=14;
 var RA={europe:'#4a7fc1',asia:'#c47c3a',americas:'#3a8a5c',africa:'#8a6c2a',oceania:'#b04a72'};
 var TAGS=['festival','nature','food','nightlife','culture','adventure','sports','wellness','romance','history'];
@@ -154,7 +158,7 @@ function normEvent(r){
   var lat=parseFloat(r.lat),lon=parseFloat(r.lon);
   return {id:r.id||(slug(city(r.destination))+'-'+slug(r.event).substring(0,40)+'-'+start.substring(0,4)),
     s:s,e:e,destination:r.destination,city:city(r.destination),region:(r.region||'').toLowerCase(),event:r.event||r.destination,
-    eventDates:r.eventDates||fmtRange(s,e),hook:r.hook||'',bookAhead:r.bookAhead==='TRUE',tags:parseTags(r.tags),
+    eventDates:r.eventDates||fmtRange(s,e),approx:r.datesApprox==='TRUE',hook:r.hook||'',bookAhead:r.bookAhead==='TRUE',tags:parseTags(r.tags),
     lat:isFinite(lat)?lat:null,lon:isFinite(lon)?lon:null,
     cost:{f:f,h:h,fo:fo,ex:ex,total:parseFloat(r.totalCost)||(f+h+fo+ex),notes:r.costNotes||''},deal:null};
 }
@@ -175,7 +179,7 @@ function urgency(ev){
   if(n<=14)return'Starts in '+n+' day'+(n===1?'':'s')+' – book immediately';
   if(n<=60)return n+' days away – book soon';
   if(n<=120)return Math.round(n/7)+' weeks out – good time to book flights';
-  if(n<=200)return'About '+Math.round(n/30)+' months away – watch for deals';
+  if(n<=200)return'About '+Math.round(n/30)+' months away – start watching flight prices';
   return Math.round(n/30)+' months away';
 }
 function tripDates(ev){var dep=addDays(ev.s,-2);if(dep<=TODAY)dep=addDays(TODAY,1);if(dep>ev.e)dep=ev.s;return{dep:dep,ret:addDays(dep,TRIP_DAYS)}}
@@ -327,7 +331,7 @@ function openGPanel(entry){
   document.getElementById('gp-accent').style.background=RA[entry.region]||'#888';
   document.getElementById('gp-main').innerHTML=
     '<div class="gp-dest">'+esc(entry.destination)+'</div><div class="gp-event">'+esc(entry.event)+'</div>'
-   +'<div class="gp-dates">'+esc(entry.eventDates)+'</div><div class="gp-urg">'+esc(urgency(entry))+'</div>'
+   +'<div class="gp-dates">'+(entry.approx?'~ ':'')+esc(entry.eventDates)+(entry.approx?' &middot; dates estimated, confirm with the organizer':'')+'</div><div class="gp-urg">'+esc(urgency(entry))+'</div>'
    +(entry.hook?'<div class="gp-hook">'+esc(entry.hook)+'</div>':'')
    +(entry.tags.length?'<div class="gp-tags">'+entry.tags.map(function(t){return'<span class="gp-tag">'+esc(t)+'</span>'}).join('')+'</div>':'')
    +'<div class="gp-badges">'+(entry.bookAhead?'<span class="pb warn">Book ahead</span>':'')+(deal?'<span class="pb deal">'+esc(deal.price||'Deal')+' from '+HOME+'</span>':'')+'</div>'
@@ -361,9 +365,10 @@ function animateGlobe(){
   globeRenderer.render(globeScene,globeCamera);
 }
 
+if(SHOW_DEALS){var dl=document.getElementById('deal-legend');if(dl)dl.style.display=''}
 function init(){
   if(typeof THREE==='undefined'){document.getElementById('status').textContent='The 3D library could not load. Check your connection and reload.';return}
-  Promise.all([fetchTab(CALENDAR_GID),fetchTab(DEALS_GID).catch(function(){return[]})]).then(function(res){
+  Promise.all([fetchTab(CALENDAR_GID),SHOW_DEALS?fetchTab(DEALS_GID).catch(function(){return[]}):Promise.resolve([])]).then(function(res){
     var seen={};
     EVENTS=res[0].map(normEvent).filter(function(ev){if(!ev||seen[ev.id])return false;seen[ev.id]=true;return true});
     EVENTS.forEach(function(ev){BYID[ev.id]=ev});

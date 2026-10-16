@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elsewhere &mdash; Globe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0a0a0a;--paper:#f5f0e8;--paper-mid:#ede7d9;--paper-soft:#e4ddd0;
+  --gold:#c9a84c;--gold-light:#e8d5a3;--gold-dim:#7a6330;
+  --muted:#6b6355;--faint:#9b9185;--red:#9b2226;--border:rgba(0,0,0,0.08);
+  --font-d:'Cormorant Garamond',Georgia,serif;--font-b:'DM Sans',system-ui,sans-serif;
+}
+html,body{height:100%}
+body{font-family:var(--font-b);background:var(--ink);color:var(--ink);overflow:hidden;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--ink);border-bottom:1px solid rgba(201,168,76,0.2);flex:none}
+.hdr-in{padding:0 28px;height:60px;display:flex;align-items:center;gap:20px}
+.wordmark{font-family:var(--font-d);font-size:24px;font-weight:300;letter-spacing:0.14em;color:var(--paper);text-transform:uppercase;text-decoration:none}
+.wordmark em{font-style:italic;color:var(--gold)}
+.back{margin-left:auto;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink);background:var(--gold);padding:8px 16px;border-radius:3px;text-decoration:none}
+.back:hover{opacity:0.9}
+#stage{flex:1;position:relative;min-height:0;cursor:grab;background:#060d15}
+#stage:active{cursor:grabbing}
+#gc{width:100%;height:100%;display:block}
+#legend{position:absolute;bottom:20px;left:24px;display:flex;gap:14px;flex-wrap:wrap;z-index:10;background:rgba(10,10,10,0.6);padding:10px 16px;border-radius:4px;border:1px solid rgba(255,255,255,0.07)}
+.sl{display:flex;align-items:center;gap:6px;font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:rgba(245,240,232,0.6)}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+#hint{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:0.08em;color:rgba(245,240,232,0.45);background:rgba(10,10,10,0.5);padding:7px 14px;border-radius:20px;pointer-events:none;white-space:nowrap}
+#status{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(245,240,232,0.5);font-family:var(--font-d);font-style:italic;font-size:26px;font-weight:300;pointer-events:none;text-align:center;padding:24px}
+
+.gpanel{position:absolute;top:20px;right:20px;width:340px;background:var(--paper);border-radius:6px;box-shadow:0 8px 48px rgba(0,0,0,0.45);overflow:hidden;transform:translateX(420px);transition:transform .35s cubic-bezier(.25,.46,.45,.94);z-index:20;max-height:calc(100% - 40px);display:flex;flex-direction:column}
+.gpanel.open{transform:translateX(0)}
+.gp-accent{height:3px;flex-shrink:0}
+.gp-close{position:absolute;top:12px;right:12px;width:28px;height:28px;background:rgba(0,0,0,0.06);border:none;border-radius:50%;cursor:pointer;font-size:14px;color:var(--muted)}
+.gp-close:hover{background:rgba(0,0,0,0.12)}
+.gp-main{padding:20px 22px 16px;overflow-y:auto}
+.gp-dest{font-family:var(--font-d);font-size:30px;font-weight:400;line-height:1.05;letter-spacing:-0.01em;margin:0 24px 3px 0}
+.gp-event{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.gp-dates{font-size:12px;color:var(--faint);margin-bottom:10px}
+.gp-urg{font-size:12px;padding:7px 10px;background:rgba(224,115,64,0.08);border-left:2px solid #e07340;border-radius:2px;margin-bottom:10px;color:#c45a1a}
+.gp-hook{font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:14px}
+.gp-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.gp-tag{font-size:10px;letter-spacing:0.07em;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:var(--paper-mid);color:var(--muted);border:1px solid var(--border)}
+.gp-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.pb{font-size:10px;letter-spacing:0.05em;padding:3px 9px;border-radius:2px;border:1px solid var(--border);color:var(--muted)}
+.pb.warn{border-color:rgba(155,34,38,0.3);color:var(--red);background:rgba(155,34,38,0.04)}
+.pb.deal{border-color:rgba(224,64,251,0.5);color:#a4179e;background:rgba(224,64,251,0.06);font-weight:500}
+.gp-dlink{display:inline-block;margin-top:4px;font-size:11px;letter-spacing:0.06em;color:#a4179e;text-decoration:none;border-bottom:1px solid rgba(164,23,158,0.3)}
+.btns{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.btn{display:block;text-align:center;font-size:12px;letter-spacing:0.07em;text-transform:uppercase;padding:11px 18px;border-radius:3px;text-decoration:none}
+.btn.p{background:var(--ink);color:var(--paper)}
+.btn.s{background:var(--paper-soft);color:var(--ink);border:1px solid var(--border)}
+.btn.t{background:transparent;color:var(--gold-dim);border:1px solid rgba(122,99,48,0.35)}
+.btn:hover{opacity:0.88}
+.gp-cost{border-top:1px solid var(--border);padding:16px 22px 20px;background:var(--paper-soft);flex-shrink:0}
+.cost-bar{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-bottom:14px;gap:2px}
+.cost-seg{border-radius:2px}
+.cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:12px}
+.cost-row{display:flex;justify-content:space-between;font-size:12px;color:var(--faint);gap:6px}
+.cost-row span:last-child{font-weight:500;color:var(--muted)}
+.cost-total{display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;border-top:1px solid var(--border);margin-bottom:8px}
+.cost-total .l{font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted)}
+.cost-total .v{font-family:var(--font-d);font-size:32px;font-weight:300}
+.cost-notes{font-size:12px;color:var(--faint);font-style:italic;line-height:1.5}
+@media(max-width:700px){
+  .hdr-in{padding:0 16px}
+  .gpanel{left:12px;right:12px;width:auto;top:auto;bottom:12px;max-height:62%;transform:translateY(110%)}
+  .gpanel.open{transform:translateY(0)}
+  #legend{left:12px;bottom:12px;gap:8px 12px;padding:8px 12px}
+  #hint{display:none}
+}
+</style>
+</head>
+<body>
+<header class="hdr"><div class="hdr-in">
+  <a class="wordmark" href="index.html">Els<em>e</em>where</a>
+  <a class="back" href="index.html">&larr; Calendar</a>
+</div></header>
+<div id="stage">
+  <canvas id="gc"></canvas>
+  <div id="hint">Drag to rotate &middot; scroll to zoom &middot; click a pin</div>
+  <div id="status">Loading the world&hellip;</div>
+  <div id="legend">
+    <div class="sl"><span class="dot" style="background:#f5c842"></span>Spring</div>
+    <div class="sl"><span class="dot" style="background:#4caf7d"></span>Summer</div>
+    <div class="sl"><span class="dot" style="background:#e07340"></span>Autumn</div>
+    <div class="sl"><span class="dot" style="background:#5b9bd5"></span>Winter</div>
+    <div class="sl"><span class="dot" style="background:#e040fb;border:2px solid #fff"></span>Flight deal</div>
+  </div>
+  <div class="gpanel" id="gpanel">
+    <div class="gp-accent" id="gp-accent"></div>
+    <button class="gp-close" id="gp-close" aria-label="Close">&#x2715;</button>
+    <div class="gp-main" id="gp-main"></div>
+    <div class="gp-cost" id="gp-cost"></div>
+  </div>
+</div>
+
+<script>
+var SHEET_ID='1t-lDfHKAXXOclTGVLn4nV0Nz3Cm6Py9VO6wS-4Uf_As';
+var CALENDAR_GID='73191465', DEALS_GID='0';
+var HOME='LAX', TRIP_DAYS=12, DEAL_DAYS_BACK=14;
+var RA={europe:'#4a7fc1',asia:'#c47c3a',americas:'#3a8a5c',africa:'#8a6c2a',oceania:'#b04a72'};
+var TAGS=['festival','nature','food','nightlife','culture','adventure','sports','wellness','romance','history'];
+var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var SEASON=[0x5b9bd5,0x5b9bd5,0xf5c842,0xf5c842,0xf5c842,0x4caf7d,0x4caf7d,0x4caf7d,0xe07340,0xe07340,0xe07340,0x5b9bd5]; // by month index
+
+var EVENTS=[], BYID={}, DEALS={};
+var TODAY=new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
+
+function p2(n){return(n<10?'0':'')+n}
+function pd(s){var p=String(s).split('-');return new Date(+p[0],+p[1]-1,+p[2])}
+function iso(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
+function addDays(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n)}
+function diff(a,b){return Math.round((b-a)/864e5)}
+function isoOk(s){return /^\d{4}-\d{2}-\d{2}$/.test(s)&&!isNaN(pd(s).getTime())}
+function fmtShort(d){return MONTHS[d.getMonth()].substring(0,3)+' '+d.getDate()}
+function fmtRange(s,e){
+  if(iso(s)===iso(e))return fmtShort(s)+', '+s.getFullYear();
+  if(s.getMonth()===e.getMonth())return fmtShort(s)+' – '+e.getDate()+', '+e.getFullYear();
+  return fmtShort(s)+' – '+fmtShort(e)+', '+e.getFullYear();
+}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function money(n){return '$'+Math.round(n).toLocaleString('en-US')}
+function slug(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')}
+function city(d){return String(d||'').split(',')[0].trim()}
+function safeUrl(u){return /^https:\/\/(mail\.google\.com|www\.going\.com|going\.com)\//.test(u||'')?u:''}
+
+function parseCSV(t){
+  var rows=[],row=[],f='',q=false,i,c;
+  for(i=0;i<t.length;i++){c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;else if(c===','){row.push(f);f=''}
+    else if(c==='\n'){row.push(f.replace(/\r$/,''));rows.push(row);row=[];f=''}else f+=c}
+  if(f.length||row.length){row.push(f.replace(/\r$/,''));rows.push(row)}
+  if(rows.length<2)return[];
+  var h=rows[0].map(function(x){return x.trim()});
+  return rows.slice(1).filter(function(r){return r.some(function(x){return x.trim()})}).map(function(r){var o={};h.forEach(function(k,j){o[k]=(r[j]||'').trim()});return o});
+}
+function fetchTab(gid){return fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/export?format=csv&gid='+gid).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text()}).then(parseCSV)}
+function parseTags(s){
+  if(!s)return[];s=String(s).trim();var a;
+  if(s.charAt(0)==='['){try{a=JSON.parse(s.replace(/'/g,'"'))}catch(e){a=[]}}else a=s.split(',');
+  return a.map(function(t){return String(t).trim().toLowerCase()}).filter(function(t){return TAGS.indexOf(t)>-1}).slice(0,3);
+}
+function normEvent(r){
+  var start=r.startDate||r.weekStart,end=r.endDate||r.weekEnd||start;
+  if(!r.destination||!isoOk(start)||!isoOk(end))return null;
+  var s=pd(start),e=pd(end);if(e<s){var t=s;s=e;e=t}
+  var f=parseFloat(r.flightCost)||0,h=parseFloat(r.housingCost)||0,fo=parseFloat(r.foodCost)||0,ex=parseFloat(r.experientialCost)||0;
+  var lat=parseFloat(r.lat),lon=parseFloat(r.lon);
+  return {id:r.id||(slug(city(r.destination))+'-'+slug(r.event).substring(0,40)+'-'+start.substring(0,4)),
+    s:s,e:e,destination:r.destination,city:city(r.destination),region:(r.region||'').toLowerCase(),event:r.event||r.destination,
+    eventDates:r.eventDates||fmtRange(s,e),hook:r.hook||'',bookAhead:r.bookAhead==='TRUE',tags:parseTags(r.tags),
+    lat:isFinite(lat)?lat:null,lon:isFinite(lon)?lon:null,
+    cost:{f:f,h:h,fo:fo,ex:ex,total:parseFloat(r.totalCost)||(f+h+fo+ex),notes:r.costNotes||''},deal:null};
+}
+function loadDeals(rows){
+  var cutoff=addDays(TODAY,-DEAL_DAYS_BACK);
+  rows.forEach(function(d){
+    if(d.matchFound!=='TRUE'||d.matchScore!=='high'||!d.calendarEventId)return;
+    var w=d.date?new Date(d.date):null;if(w&&!isNaN(w.getTime())&&w<cutoff)return;
+    var ev=BYID[d.calendarEventId];if(!ev||ev.e<TODAY)return;
+    var cur=DEALS[ev.id];if(!cur||String(d.date)>String(cur.date))DEALS[ev.id]=d;
+  });
+  EVENTS.forEach(function(ev){ev.deal=DEALS[ev.id]||null});
+}
+function urgency(ev){
+  if(ev.e<TODAY)return'This event has passed';
+  if(ev.s<=TODAY)return'Happening now – ends '+fmtShort(ev.e);
+  var n=diff(TODAY,ev.s);
+  if(n<=14)return'Starts in '+n+' day'+(n===1?'':'s')+' – book immediately';
+  if(n<=60)return n+' days away – book soon';
+  if(n<=120)return Math.round(n/7)+' weeks out – good time to book flights';
+  if(n<=200)return'About '+Math.round(n/30)+' months away – watch for deals';
+  return Math.round(n/30)+' months away';
+}
+function tripDates(ev){var dep=addDays(ev.s,-2);if(dep<=TODAY)dep=addDays(TODAY,1);if(dep>ev.e)dep=ev.s;return{dep:dep,ret:addDays(dep,TRIP_DAYS)}}
+function costHtml(ev){
+  var k=ev.cost;if(!k.total)return'';
+  var pf=Math.round(k.f/k.total*100),ph=Math.round(k.h/k.total*100),pfo=Math.round(k.fo/k.total*100),pe=Math.max(0,100-pf-ph-pfo);
+  return'<div class="cost-bar"><div class="cost-seg" style="width:'+pf+'%;background:#4a7fc1"></div><div class="cost-seg" style="width:'+ph+'%;background:#c47c3a"></div><div class="cost-seg" style="width:'+pfo+'%;background:#3a8a5c"></div><div class="cost-seg" style="width:'+pe+'%;background:#8a6c2a"></div></div>'
+   +'<div class="cost-grid"><div class="cost-row"><span>Flight (LAX)</span><span>'+money(k.f)+'</span></div><div class="cost-row"><span>Housing &middot; 12 nts</span><span>'+money(k.h)+'</span></div><div class="cost-row"><span>Food &amp; drink</span><span>'+money(k.fo)+'</span></div><div class="cost-row"><span>Experiences</span><span>'+money(k.ex)+'</span></div></div>'
+   +'<div class="cost-total"><span class="l">'+TRIP_DAYS+'-day estimate</span><span class="v">'+money(k.total)+'</span></div>'+(k.notes?'<div class="cost-notes">'+esc(k.notes)+'</div>':'');
+}
+
+/* ---------- coordinate fallback (used only if the sheet has no lat/lon) ---------- */
+var COORDS={'vienna':[48.21,16.37],'harbin':[45.80,126.53],'tromso':[69.65,18.96],'troms':[69.65,18.96],'melbourne':[-37.81,144.96],'jaipur':[26.91,75.79],'venice':[45.44,12.34],'rio':[-22.91,-43.17],'new orleans':[29.95,-90.07],'quebec':[46.81,-71.21],'sapporo':[43.06,141.35],'hokkaido':[43.06,141.35],'kyoto':[35.01,135.77],'seville':[37.39,-5.99],'chiang mai':[18.79,98.98],'amsterdam':[52.37,4.90],'cannes':[43.55,7.02],'madrid':[40.42,-3.70],'monaco':[43.74,7.43],'dubrovnik':[42.65,18.09],'copenhagen':[55.68,12.57],'reykjavik':[64.13,-21.82],'paris':[48.85,2.35],'glastonbury':[51.14,-2.71],'cusco':[-13.53,-71.97],'pamplona':[42.82,-1.64],'edinburgh':[55.95,-3.19],'london':[51.51,-0.13],'cape town':[-33.93,18.42],'munich':[48.14,11.58],'tbilisi':[41.69,44.83],'oaxaca':[17.07,-96.72],'albuquerque':[35.09,-106.65],'seoul':[37.57,126.98],'marrakech':[31.63,-8.00],'varanasi':[25.32,82.97],'pushkar':[26.49,74.55],'strasbourg':[48.58,7.75],'sydney':[-33.87,151.21],'tokyo':[35.68,139.69],'singapore':[1.35,103.82],'istanbul':[41.01,28.95],'cairo':[30.04,31.24],'buenos aires':[-34.60,-58.38],'mexico city':[19.43,-99.13],'havana':[23.13,-82.38],'lisbon':[38.72,-9.14],'porto':[41.15,-8.61],'barcelona':[41.39,2.15],'rome':[41.90,12.50],'prague':[50.08,14.44],'budapest':[47.50,19.05],'berlin':[52.52,13.40],'stockholm':[59.33,18.07],'salzburg':[47.80,13.05],'bruges':[51.21,3.22],'santorini':[36.39,25.46],'nairobi':[-1.29,36.82],'bali':[-8.34,115.09],'bangkok':[13.75,100.52],'new zealand':[-40.90,174.89],'fiji':[-17.71,178.06],'tahiti':[-17.54,-149.57],'hawaii':[19.90,-155.58],'cancun':[21.16,-86.85],'yucatan':[20.97,-89.62],'costa rica':[9.75,-83.75],'banff':[51.18,-115.57],'calgary':[51.04,-114.07],'toronto':[43.65,-79.38],'denver':[39.74,-104.98],'new york':[40.71,-74.01],'miami':[25.77,-80.19],'new mexico':[34.52,-105.87],'key west':[24.56,-81.78],'palau':[7.51,134.58],'taipei':[25.03,121.56],'malta':[35.90,14.51],'croatia':[45.10,15.20],'sicily':[37.60,14.01],'sardinia':[40.12,9.01],'georgia':[42.32,43.36],'ireland':[53.41,-8.24],'portugal':[39.40,-8.22],'india':[20.59,78.96],'china':[35.86,104.20],'japan':[36.20,138.25],'brazil':[-14.24,-51.93],'argentina':[-38.42,-63.62],'peru':[-9.19,-75.01],'colombia':[4.71,-74.07],'chile':[-35.68,-71.54],'morocco':[31.79,-7.09],'egypt':[26.82,30.80],'turkey':[38.96,35.24],'finland':[61.92,25.75],'sweden':[60.13,18.64],'norway':[60.47,8.47],'iceland':[64.96,-19.02],'lapland':[68.00,27.00],'guadalajara':[20.67,-103.35],'puerto rico':[18.22,-66.59],'jamaica':[18.11,-77.30],'europe':[50.00,10.00],'australia':[-25.27,133.78],'africa':[1.00,20.00],'goa':[15.30,73.91],'mumbai':[19.08,72.88],'delhi':[28.61,77.21],'patagonia':[-51.62,-69.22],'mendoza':[-32.89,-68.84],'tasmania':[-41.45,145.97],'cairns':[-16.92,145.77],'perth':[-31.95,115.86],'auckland':[-36.86,174.77],'chengdu':[30.57,104.07],'shanghai':[31.23,121.47],'beijing':[39.91,116.39],'maldives':[3.20,73.22],'petra':[30.33,35.44],'fez':[34.03,-5.00],'naples':[40.84,14.25],'florence':[43.77,11.25],'milan':[45.46,9.19],'tuscany':[43.77,11.25],'medellin':[6.25,-75.56],'cartagena':[10.39,-75.51],'lima':[-12.05,-77.04],'galapagos':[-0.95,-90.96],'quito':[-0.23,-78.52],'sao paulo':[-23.55,-46.63],'barbados':[13.19,-59.54],'azores':[37.74,-25.67],'madeira':[32.76,-16.96],'baku':[40.41,49.87],'santa fe':[35.69,-105.94],'sedona':[34.87,-111.79],'moab':[38.57,-109.55],'valletta':[35.90,14.51],'avignon':[43.95,4.81],'san francisco':[37.77,-122.42],'seattle':[47.61,-122.33],'portland':[45.52,-122.68],'chicago':[41.88,-87.63],'austin':[30.27,-97.74],'san sebastian':[43.32,-1.98],'ghent':[51.05,3.72],'yerevan':[40.18,44.51],'nepal':[28.39,84.12],'kathmandu':[27.72,85.32],'queenstown':[-45.03,168.66],'abu dhabi':[24.47,54.37],'muscat':[23.59,58.59],'amman':[31.96,35.95],'tel aviv':[32.07,34.79],'washington':[38.91,-77.04],'dublin':[53.35,-6.26],'bergen':[60.39,5.32],'lyon':[45.76,4.84],'kenya':[-1.29,36.82],'ubud':[-8.51,115.26]};
+function getCoords(dest){var d=(dest||'').toLowerCase();for(var k in COORDS){if(d.indexOf(k)>-1)return COORDS[k]}return null}
+function evCoords(ev){
+  if(ev.lat!==null&&ev.lon!==null)return[ev.lat,ev.lon];
+  return getCoords(ev.destination);
+}
+
+/* ---------- globe ---------- */
+var globeScene,globeCamera,globeRenderer,globeCanvas,globeGroup,raycaster,mouse3;
+var pinMeshes=[],pinData=[],isDragging=false,prevMouse={x:0,y:0},autoRotate=true,pinPulse=0;
+
+function ll2v3(lat,lon,r){
+  var phi=(90-lat)*Math.PI/180,theta=(lon+180)*Math.PI/180;
+  return new THREE.Vector3(-r*Math.sin(phi)*Math.cos(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta));
+}
+function initGlobe(){
+  globeCanvas=document.getElementById('gc');
+  var wrap=document.getElementById('stage');
+  var W=wrap.clientWidth,H=wrap.clientHeight;
+  globeScene=new THREE.Scene();
+  globeCamera=new THREE.PerspectiveCamera(45,W/H,0.1,1000);
+  globeCamera.position.z=window.innerWidth<700?3.3:2.6;
+  globeRenderer=new THREE.WebGLRenderer({canvas:globeCanvas,antialias:true,alpha:true});
+  globeRenderer.setSize(W,H);
+  globeRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  globeRenderer.setClearColor(0x060d15,1);
+  globeScene.add(new THREE.AmbientLight(0x8aaabb,0.5));
+  var sun=new THREE.DirectionalLight(0xfff5e0,2.2);sun.position.set(6,3,4);globeScene.add(sun);
+  var fill=new THREE.DirectionalLight(0x2255aa,0.3);fill.position.set(-4,-2,-3);globeScene.add(fill);
+  globeGroup=new THREE.Group();globeGroup.rotation.x=0.3;globeScene.add(globeGroup); // slight tilt so northern events start in view
+
+  var loader=new THREE.TextureLoader();loader.crossOrigin='anonymous';
+  var base='https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/planets/';
+  loader.load(base+'earth_atmos_2048.jpg',function(tex){
+    loader.load(base+'earth_specular_2048.jpg',function(spec){
+      loader.load(base+'earth_normal_2048.jpg',function(bump){buildEarth(tex,spec,bump)},null,function(){buildEarth(tex,spec,null)});
+    },null,function(){buildEarth(tex,null,null)});
+  },null,function(){buildEarthFallback()});
+
+  var stars=[];
+  for(var i=0;i<2000;i++){var th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=80+Math.random()*20;stars.push(r*Math.sin(ph)*Math.cos(th),r*Math.cos(ph),r*Math.sin(ph)*Math.sin(th))}
+  var sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.Float32BufferAttribute(stars,3));
+  globeScene.add(new THREE.Points(sg,new THREE.PointsMaterial({color:0xffffff,size:0.18,transparent:true,opacity:0.7})));
+
+  raycaster=new THREE.Raycaster();mouse3=new THREE.Vector2();
+  addGlobeEvents();animateGlobe();
+  window.addEventListener('resize',function(){var W2=wrap.clientWidth,H2=wrap.clientHeight;globeCamera.aspect=W2/H2;globeCamera.updateProjectionMatrix();globeRenderer.setSize(W2,H2)});
+}
+function buildEarth(tex,spec,bump){
+  var mat=new THREE.MeshPhongMaterial({map:tex,specularMap:spec||null,bumpMap:bump||null,bumpScale:bump?0.05:0,specular:spec?new THREE.Color(0x333333):new THREE.Color(0x111111),shininess:spec?25:8});
+  globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1,64,64),mat));
+  globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.025,64,64),new THREE.MeshPhongMaterial({color:0x4488cc,transparent:true,opacity:0.1,side:THREE.BackSide})));
+  globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.012,64,64),new THREE.MeshPhongMaterial({color:0xffffff,transparent:true,opacity:0.07,depthWrite:false})));
+  buildAllPins();
+}
+function buildEarthFallback(){
+  globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1,64,64),new THREE.MeshPhongMaterial({color:0x1a5276,shininess:30,specular:new THREE.Color(0x2e86c1)})));
+  var gm=new THREE.LineBasicMaterial({color:0x1e5070,transparent:true,opacity:0.6}),pts,la,lo;
+  for(la=-60;la<=60;la+=30){pts=[];for(lo=0;lo<=360;lo+=3)pts.push(ll2v3(la,lo-180,1.003));globeGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),gm))}
+  for(lo=-180;lo<=180;lo+=30){pts=[];for(la=-90;la<=90;la+=3)pts.push(ll2v3(la,lo,1.003));globeGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),gm))}
+  buildAllPins();
+}
+
+function buildAllPins(){
+  // pinMeshes and pinData are strictly parallel (one entry each per pin); rings are NOT added to pinMeshes
+  var placed={},count=0;
+  EVENTS.forEach(function(entry){
+    if(entry.e<TODAY)return;
+    var c=evCoords(entry);if(!c)return;
+    // nudge pins that share a city so every one stays clickable
+    var key=Math.round(c[0]*10)+','+Math.round(c[1]*10),n=placed[key]||0;placed[key]=n+1;
+    var lat=c[0],lon=c[1];
+    if(n>0){var a=n*2.4,rad=0.9*Math.ceil(n/6);lat+=rad*Math.cos(a);lon+=rad*Math.sin(a)/Math.max(0.3,Math.cos(lat*Math.PI/180))}
+    var deal=entry.deal,col=deal?0xe040fb:SEASON[entry.s.getMonth()];
+    var pos=ll2v3(lat,lon,1.02);
+    var pm=new THREE.Mesh(new THREE.SphereGeometry(deal?0.030:0.022,12,12),new THREE.MeshPhongMaterial({color:col,emissive:col,emissiveIntensity:deal?0.9:0.55}));
+    pm.position.copy(pos);globeGroup.add(pm);
+    pinMeshes.push(pm);pinData.push(entry);count++;
+    if(deal){var hm=new THREE.Mesh(new THREE.RingGeometry(0.034,0.046,24),new THREE.MeshBasicMaterial({color:0xe040fb,transparent:true,opacity:0.45,side:THREE.DoubleSide}));hm.position.copy(pos);hm.lookAt(pos.clone().multiplyScalar(2));globeGroup.add(hm)}
+    var days=diff(TODAY,entry.s);
+    if(days>=0&&days<=14){var nr=new THREE.Mesh(new THREE.RingGeometry(0.038,0.046,24),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.9,side:THREE.DoubleSide}));nr.position.copy(pos);nr.lookAt(pos.clone().multiplyScalar(2));globeGroup.add(nr)}
+  });
+  var st=document.getElementById('status');
+  if(count===0){st.textContent='No upcoming events to show yet.'}else st.style.display='none';
+}
+
+function addGlobeEvents(){
+  var wrap=document.getElementById('stage');
+  wrap.addEventListener('mousedown',function(e){
+    if(e.target.closest('.gpanel'))return;
+    isDragging=false;prevMouse={x:e.clientX,y:e.clientY};var dragDist=0;
+    function onDrag(e){var ddx=e.clientX-prevMouse.x,ddy=e.clientY-prevMouse.y;dragDist+=Math.sqrt(ddx*ddx+ddy*ddy);if(dragDist>4){isDragging=true;autoRotate=false}
+      globeGroup.rotation.y+=ddx*0.005;globeGroup.rotation.x=Math.max(-1.2,Math.min(1.2,globeGroup.rotation.x+ddy*0.005));prevMouse={x:e.clientX,y:e.clientY}}
+    function onUp(e){wrap.removeEventListener('mousemove',onDrag);wrap.removeEventListener('mouseup',onUp);if(!isDragging)handleGlobeClick(e);isDragging=false;dragDist=0}
+    wrap.addEventListener('mousemove',onDrag);wrap.addEventListener('mouseup',onUp);
+  });
+  var tStart=null;
+  wrap.addEventListener('touchstart',function(e){if(e.target.closest('.gpanel'))return;isDragging=false;prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};tStart={x:prevMouse.x,y:prevMouse.y}},{passive:true});
+  wrap.addEventListener('touchmove',function(e){if(!tStart)return;var tx=e.touches[0].clientX,ty=e.touches[0].clientY;
+    if(Math.abs(tx-tStart.x)+Math.abs(ty-tStart.y)>6){isDragging=true;autoRotate=false}
+    globeGroup.rotation.y+=(tx-prevMouse.x)*0.005;globeGroup.rotation.x=Math.max(-1.2,Math.min(1.2,globeGroup.rotation.x+(ty-prevMouse.y)*0.005));prevMouse={x:tx,y:ty}},{passive:true});
+  wrap.addEventListener('touchend',function(e){if(tStart&&!isDragging&&e.changedTouches.length)handleGlobeClick(e.changedTouches[0]);tStart=null});
+  wrap.addEventListener('wheel',function(e){e.preventDefault();globeCamera.position.z=Math.max(1.6,Math.min(4.5,globeCamera.position.z+e.deltaY*0.002))},{passive:false});
+  document.getElementById('gp-close').addEventListener('click',function(){closeGPanel()});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeGPanel()});
+}
+
+function handleGlobeClick(e){
+  var rect=globeCanvas.getBoundingClientRect();
+  var cw=globeCanvas.clientWidth||rect.width,ch=globeCanvas.clientHeight||rect.height;
+  mouse3.x=((e.clientX-rect.left)/cw)*2-1;mouse3.y=-((e.clientY-rect.top)/ch)*2+1;
+  raycaster.setFromCamera(mouse3,globeCamera);
+  var hits=raycaster.intersectObjects(pinMeshes,false);
+  if(hits.length){var idx=pinMeshes.indexOf(hits[0].object);if(idx>=0&&pinData[idx]){openGPanel(pinData[idx]);return}}
+  // fallback: nearest front-facing pin within 50px
+  var best=null,bestDist=Infinity;
+  pinMeshes.forEach(function(m,i){
+    var wp=new THREE.Vector3();m.getWorldPosition(wp);
+    if(wp.clone().normalize().dot(globeCamera.position.clone().normalize())<0.15)return; // far side
+    var ndc=wp.clone().project(globeCamera);if(ndc.z>1)return;
+    var sx=(ndc.x+1)/2*cw+rect.left,sy=(-ndc.y+1)/2*ch+rect.top;
+    var d=Math.sqrt(Math.pow(e.clientX-sx,2)+Math.pow(e.clientY-sy,2));
+    if(d<50&&d<bestDist){bestDist=d;best=i}
+  });
+  if(best!==null){openGPanel(pinData[best]);return}
+  closeGPanel();autoRotate=true;
+}
+function closeGPanel(){document.getElementById('gpanel').classList.remove('open')}
+
+function openGPanel(entry){
+  autoRotate=false;
+  var idx=pinData.indexOf(entry);
+  if(idx>=0&&pinMeshes[idx])flyToVec(pinMeshes[idx].position); // pin's own local position
+  var tr=tripDates(entry),deal=entry.deal;
+  var flights='https://www.google.com/travel/flights?q='+encodeURIComponent('Flights from '+HOME+' to '+entry.destination+' on '+iso(tr.dep)+' through '+iso(tr.ret));
+  var stays='https://www.airbnb.com/s/'+encodeURIComponent(entry.city)+'/homes?checkin='+iso(tr.dep)+'&checkout='+iso(tr.ret);
+  document.getElementById('gp-accent').style.background=RA[entry.region]||'#888';
+  document.getElementById('gp-main').innerHTML=
+    '<div class="gp-dest">'+esc(entry.destination)+'</div><div class="gp-event">'+esc(entry.event)+'</div>'
+   +'<div class="gp-dates">'+esc(entry.eventDates)+'</div><div class="gp-urg">'+esc(urgency(entry))+'</div>'
+   +(entry.hook?'<div class="gp-hook">'+esc(entry.hook)+'</div>':'')
+   +(entry.tags.length?'<div class="gp-tags">'+entry.tags.map(function(t){return'<span class="gp-tag">'+esc(t)+'</span>'}).join('')+'</div>':'')
+   +'<div class="gp-badges">'+(entry.bookAhead?'<span class="pb warn">Book ahead</span>':'')+(deal?'<span class="pb deal">'+esc(deal.price||'Deal')+' from '+HOME+'</span>':'')+'</div>'
+   +(deal&&safeUrl(deal.permalink)?'<a href="'+esc(safeUrl(deal.permalink))+'" class="gp-dlink" target="_blank" rel="noopener">View Going.com deal &rarr;</a>':'')
+   +'<div class="btns"><a class="btn p" target="_blank" rel="noopener" href="'+esc(flights)+'">Search flights on Google &rarr;</a>'
+   +'<a class="btn s" target="_blank" rel="noopener" href="'+esc(stays)+'">Find stays on Airbnb &rarr;</a>'
+   +'<a class="btn t" href="index.html#e='+encodeURIComponent(entry.id)+'">Full details in the calendar &rarr;</a></div>';
+  var ch=costHtml(entry),ce=document.getElementById('gp-cost');
+  ce.innerHTML=ch;ce.style.display=ch?'block':'none';
+  document.getElementById('gpanel').classList.add('open');
+}
+
+function flyToVec(p){
+  // Y rotation carries +X toward -Z, so facing the camera (+Z) needs R = atan2(-x, z)
+  var len=Math.sqrt(p.x*p.x+p.y*p.y+p.z*p.z);
+  var ty=Math.atan2(-p.x,p.z),tx=Math.max(-1.2,Math.min(1.2,Math.asin(p.y/len)*0.9)); // +X tilt lowers northern pins toward centre
+  var sy=globeGroup.rotation.y,sx=globeGroup.rotation.x,t=0,dy=ty-sy;
+  while(dy>Math.PI)dy-=Math.PI*2;while(dy<-Math.PI)dy+=Math.PI*2;
+  var fy=sy+dy;
+  (function step(){t+=0.04;if(t>1)return;var ease=1-Math.pow(1-t,3);globeGroup.rotation.y=sy+(fy-sy)*ease;globeGroup.rotation.x=sx+(tx-sx)*ease;requestAnimationFrame(step)})();
+}
+
+function animateGlobe(){
+  requestAnimationFrame(animateGlobe);
+  if(autoRotate)globeGroup.rotation.y+=0.0012;
+  pinPulse+=0.04;
+  for(var i=0;i<pinMeshes.length;i++){
+    var m=pinMeshes[i],en=pinData[i];
+    m.scale.setScalar(en.deal?1+0.28*Math.sin(pinPulse*1.8+i):1+0.08*Math.sin(pinPulse*0.7+i*1.3));
+  }
+  globeRenderer.render(globeScene,globeCamera);
+}
+
+function init(){
+  if(typeof THREE==='undefined'){document.getElementById('status').textContent='The 3D library could not load. Check your connection and reload.';return}
+  Promise.all([fetchTab(CALENDAR_GID),fetchTab(DEALS_GID).catch(function(){return[]})]).then(function(res){
+    var seen={};
+    EVENTS=res[0].map(normEvent).filter(function(ev){if(!ev||seen[ev.id])return false;seen[ev.id]=true;return true});
+    EVENTS.forEach(function(ev){BYID[ev.id]=ev});
+    loadDeals(res[1]);
+    initGlobe();
+  }).catch(function(err){console.error(err);document.getElementById('status').textContent='Could not load the calendar: '+(err.message||err)});
+}
+init();
+</script>
+</body>
+</html>

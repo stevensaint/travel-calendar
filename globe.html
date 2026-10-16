@@ -103,9 +103,6 @@ body{font-family:var(--font-b);background:var(--ink);color:var(--ink);overflow:h
 </div>
 
 <script>
-var SHEET_ID='1t-lDfHKAXXOclTGVLn4nV0Nz3Cm6Py9VO6wS-4Uf_As';
-var CALENDAR_GID='73191465', DEALS_GID='0';
-var SHOW_DEALS=/[?&]deals=1/.test(location.search); // private owner view only
 var HOME='LAX', TRIP_DAYS=12, DEAL_DAYS_BACK=14;
 var RA={europe:'#4a7fc1',asia:'#c47c3a',americas:'#3a8a5c',africa:'#8a6c2a',oceania:'#b04a72'};
 var TAGS=['festival','nature','food','nightlife','culture','adventure','sports','wellness','romance','history'];
@@ -144,7 +141,7 @@ function parseCSV(t){
   var h=rows[0].map(function(x){return x.trim()});
   return rows.slice(1).filter(function(r){return r.some(function(x){return x.trim()})}).map(function(r){var o={};h.forEach(function(k,j){o[k]=(r[j]||'').trim()});return o});
 }
-function fetchTab(gid){return fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/export?format=csv&gid='+gid).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text()}).then(parseCSV)}
+function fetchSnapshot(){return fetch('events.json?t='+Math.floor(Date.now()/600000)).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})}
 function parseTags(s){
   if(!s)return[];s=String(s).trim();var a;
   if(s.charAt(0)==='['){try{a=JSON.parse(s.replace(/'/g,'"'))}catch(e){a=[]}}else a=s.split(',');
@@ -365,16 +362,15 @@ function animateGlobe(){
   globeRenderer.render(globeScene,globeCamera);
 }
 
-if(SHOW_DEALS){var dl=document.getElementById('deal-legend');if(dl)dl.style.display=''}
 function init(){
   if(typeof THREE==='undefined'){document.getElementById('status').textContent='The 3D library could not load. Check your connection and reload.';return}
-  Promise.all([fetchTab(CALENDAR_GID),SHOW_DEALS?fetchTab(DEALS_GID).catch(function(){return[]}):Promise.resolve([])]).then(function(res){
+  fetchSnapshot().then(function(snap){var res=[snap.events||[],[]];
     var seen={};
     EVENTS=res[0].map(normEvent).filter(function(ev){if(!ev||seen[ev.id])return false;seen[ev.id]=true;return true});
     EVENTS.forEach(function(ev){BYID[ev.id]=ev});
     loadDeals(res[1]);
     initGlobe();
-  }).catch(function(err){console.error(err);document.getElementById('status').textContent='Could not load the calendar: '+(err.message||err)});
+  }).catch(function(err){console.error(err);document.getElementById('status').textContent='Could not load the calendar. Please reload in a moment.'});
 }
 init();
 </script>

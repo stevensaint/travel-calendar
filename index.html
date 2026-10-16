@@ -244,9 +244,6 @@ main{max-width:1240px;margin:0 auto;padding:0 28px}
 </footer>
 
 <script>
-var SHEET_ID='1t-lDfHKAXXOclTGVLn4nV0Nz3Cm6Py9VO6wS-4Uf_As';
-var CALENDAR_GID='73191465', DEALS_GID='0', META_GID='965724304';
-var SHOW_DEALS=/[?&]deals=1/.test(location.search); // private owner view only
 var HOME='LAX', TRIP_DAYS=12, DEAL_DAYS_BACK=14, STALE_DAYS=9, MAX_LANES=3;
 
 var RC={europe:'#4a7fc1',asia:'#c47c3a',americas:'#3a8a5c',africa:'#8a6c2a',oceania:'#b04a72'};
@@ -298,10 +295,7 @@ function parseCSV(t){
   return rows.slice(1).filter(function(r){return r.some(function(x){return x.trim()})}).map(function(r){
     var o={};h.forEach(function(k,j){o[k]=(r[j]||'').trim()});return o});
 }
-function fetchTab(gid){
-  return fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/export?format=csv&gid='+gid)
-    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text()}).then(parseCSV);
-}
+function fetchSnapshot(){return fetch('events.json?t='+Math.floor(Date.now()/600000)).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})}
 
 /* ---------- normalize ---------- */
 function parseTags(s){
@@ -472,7 +466,7 @@ function viewMonth(key){
     }
     html+='<div class="wk"><button class="wkbtn" data-w="'+iso(ws)+'" title="Open this week">'+fmtShort(ws)+' – '+(ws.getMonth()===we.getMonth()?we.getDate():fmtShort(we))+'</button><div class="wkgrid">'+days+bars+'</div></div>';
   }
-  html+='<div class="legend">'+Object.keys(RC).map(function(k){return '<span><i class="sw" style="background:'+RC[k]+'"></i>'+k+'</span>'}).join('')+(SHOW_DEALS?'<span><span class="dd"></span>Flight deal</span>':'')+'</div></div>';
+  html+='<div class="legend">'+Object.keys(RC).map(function(k){return '<span><i class="sw" style="background:'+RC[k]+'"></i>'+k+'</span>'}).join('')+''+'</div></div>';
 
   var mEnd=new Date(first.getFullYear(),first.getMonth()+1,0);
   var inMonth=list.filter(function(ev){return overlaps(ev,first,mEnd)}).sort(function(a,b){return a.sIso<b.sIso?-1:a.sIso>b.sIso?1:0});
@@ -612,18 +606,15 @@ document.getElementById('home').addEventListener('click',function(e){e.preventDe
 /* ---------- boot ---------- */
 function showError(msg,sheet){
   setApp('<div class="err"><h2>Could not load the calendar</h2><p>'+esc(msg)+'</p>'
-   +(sheet?'<ol><li>Open the <a href="https://docs.google.com/spreadsheets/d/'+SHEET_ID+'" target="_blank" rel="noopener">Google Sheet</a></li><li>Share &rarr; Anyone with the link &rarr; Viewer</li><li>Reload this page</li></ol>':'')+'</div>');
+   +'</div>');
 }
 function init(){
-  Promise.all([
-    fetchTab(CALENDAR_GID),
-    SHOW_DEALS?fetchTab(DEALS_GID).catch(function(){return []}):Promise.resolve([]),
-    fetchTab(META_GID).catch(function(){return []})
-  ]).then(function(res){
+  fetchSnapshot().then(function(snap){
+    var res=[snap.events||[],[],[{key:'lastCalendarRefresh',value:snap.updated||''}]];
     EVENTS=res[0].map(normEvent).filter(Boolean);
     var seen={};
     EVENTS=EVENTS.filter(function(ev){if(seen[ev.id])return false;seen[ev.id]=true;return true});
-    if(!EVENTS.length){showError('The Calendar tab has no usable events yet. Run weeklyCalendarRefresh in Apps Script.',false);return}
+    if(!EVENTS.length){showError('The calendar is empty right now. Please check back soon.',false);return}
     EVENTS.forEach(function(ev){BYID[ev.id]=ev});
     EVENTS.sort(function(a,b){return a.sIso<b.sIso?-1:a.sIso>b.sIso?1:(a.id<b.id?-1:1)});
     var maxE=EVENTS.reduce(function(m,ev){return ev.e>m?ev.e:m},EVENTS[0].e);
@@ -641,7 +632,7 @@ function init(){
       if(age>STALE_DAYS){u.classList.add('stale');u.textContent+=' · refresh overdue'}
     }
     route();
-  }).catch(function(err){console.error(err);showError(String(err.message||err),true)});
+  }).catch(function(err){console.error(err);showError('Please reload the page in a moment.',false)});
 }
 init();
 </script>
